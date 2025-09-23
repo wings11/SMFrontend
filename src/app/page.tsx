@@ -1,103 +1,601 @@
-import Image from "next/image";
+'use client'
 
-export default function Home() {
-  return (
-    <div className="font-sans grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="font-mono list-inside list-decimal text-sm/6 text-center sm:text-left">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] font-mono font-semibold px-1 py-0.5 rounded">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+import React, { useState, useEffect } from 'react'
+import { Card, CardContent } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
+import { Input } from '@/components/ui/input'
+import { Skeleton } from '@/components/ui/skeleton'
+// Carousel removed: featured layout now uses grouped rows of 3
+import { ExpandableText } from '@/components/ui/expandable-text'
+import { ScrollToTop } from '@/components/ui/scroll-to-top'
+import { Star, Calendar, Clock, Play, TrendingUp, Search, Film, Tv, ChevronRight } from 'lucide-react'
+import Link from 'next/link'
+import Image from 'next/image'
+import { moviesAPI } from '@/lib/api'
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+interface Movie {
+  _id: string
+  title: string
+  originalTitle?: string
+  type: 'movie' | 'series'
+  year?: number
+  genre: string[]
+  language: string
+  description: string
+  rating?: number
+  duration?: string
+  seasons?: number
+  episodes?: number
+  clickCount: number
+  isFeatured: boolean
+  tags: string[]
+  createdAt: string
+  slug: string
+  posterUrl?: string
+  trailerUrl?: string
+  backdropUrl?: string
+}
+
+const MovieCard = ({ movie, featured = false }: { movie: Movie; featured?: boolean }) => {
+  const handleWatchClick = async () => {
+    try {
+      const response = await moviesAPI.clickMovie(movie._id)
+      if (response.success) {
+        window.open(response.telegramLink, '_blank')
+      }
+    } catch (error) {
+      console.error('Error getting telegram link:', error)
+    }
+  }
+
+  if (featured) {
+    return (
+      <div className="relative group overflow-hidden rounded-2xl bg-white dark:bg-gray-900 shadow-lg hover:shadow-xl transition-all duration-300">
+        <div className="flex flex-col md:flex-row min-h-[300px] md:min-h-[250px]">
+          {/* Poster Image */}
+          <div className="relative w-full md:w-48 lg:w-56 flex-shrink-0">
+            <div className="aspect-[2/3] md:h-full relative">
+              {movie.posterUrl ? (
+                <Image
+                  src={movie.posterUrl || '/placeholder-movie.svg'}
+                  alt={movie.title}
+                  fill
+                  className="object-cover"
+                  sizes="(max-width: 768px) 100vw, 224px"
+                  priority
+                />
+              ) : (
+                <div className="w-full h-full bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-700 flex items-center justify-center">
+                  <div className="text-center text-gray-400 dark:text-gray-600">
+                    {movie.type === 'movie' ? (
+                      <Film className="w-12 h-12 mx-auto mb-2" />
+                    ) : (
+                      <Tv className="w-12 h-12 mx-auto mb-2" />
+                    )}
+                    <p className="text-sm">No Poster</p>
+                  </div>
+                </div>
+              )}
+            </div>
+            
+            {/* Type Badge */}
+            <div className="absolute top-3 left-3">
+              <Badge 
+                variant={movie.type === 'movie' ? 'default' : 'secondary'} 
+                className="text-xs"
+              >
+                {movie.type === 'movie' ? <Film className="w-3 h-3 mr-1" /> : <Tv className="w-3 h-3 mr-1" />}
+                {movie.type === 'movie' ? 'Movie' : 'Series'}
+              </Badge>
+            </div>
+            
+            {/* Featured Badge */}
+            <div className="absolute top-3 right-3">
+              <Badge className="text-xs bg-red-500 text-white border-0">
+                ⭐ Featured
+              </Badge>
+            </div>
+          </div>
+          
+          {/* Content */}
+          <div className="flex-1 p-4 md:p-6 flex flex-col justify-between">
+            <div className="space-y-3">
+              {/* Title */}
+              <h3 className="text-xl md:text-2xl lg:text-3xl font-bold text-gray-900 dark:text-white leading-tight">
+                {movie.title}
+              </h3>
+              
+              {/* Rating and Year */}
+              <div className="flex items-center gap-4 text-sm">
+                {movie.rating && (
+                  <div className="flex items-center gap-1">
+                    <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
+                    <span className="font-medium text-yellow-600 dark:text-yellow-400">{movie.rating}</span>
+                  </div>
+                )}
+                {movie.year && (
+                  <div className="flex items-center gap-1 text-gray-600 dark:text-gray-400">
+                    <Calendar className="w-4 h-4" />
+                    {movie.year}
+                  </div>
+                )}
+                {movie.duration && (
+                  <div className="flex items-center gap-1 text-gray-600 dark:text-gray-400">
+                    <Clock className="w-4 h-4" />
+                    {movie.duration}
+                  </div>
+                )}
+                <div className="flex items-center gap-1 text-gray-600 dark:text-gray-400">
+                  <TrendingUp className="w-4 h-4" />
+                  {movie.clickCount.toLocaleString()} views
+                </div>
+              </div>
+              
+              {/* Description */}
+              <ExpandableText
+                text={movie.description}
+                maxLines={3}
+                className="text-gray-700 dark:text-gray-300 text-sm md:text-base"
+              />
+              
+              {/* Tags/Genres */}
+              <div className="flex flex-wrap gap-2">
+                {movie.genre.slice(0, 4).map((g) => (
+                  <Badge key={g} variant="outline" className="text-xs">
+                    {g}
+                  </Badge>
+                ))}
+                {movie.genre.length > 4 && (
+                  <Badge variant="outline" className="text-xs">
+                    +{movie.genre.length - 4}
+                  </Badge>
+                )}
+              </div>
+            </div>
+            
+            {/* Watch Button */}
+            <div className="mt-4 flex gap-3">
+              <Button 
+                onClick={handleWatchClick}
+                className="flex-1 bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white border-0 shadow-lg"
+                size="lg"
+              >
+                <Play className="w-5 h-5 mr-2 fill-white" />
+                Watch Now
+              </Button>
+              
+              <Link href={`/movie/${movie._id}`}>
+                <Button 
+                  variant="outline"
+                  size="lg"
+                  className="border-gray-300 hover:bg-gray-50 dark:border-gray-600 dark:hover:bg-gray-800"
+                >
+                  View Details
+                </Button>
+              </Link>
+            </div>
+          </div>
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
+      </div>
+    )
+  }
+
+  return (
+    <Card className="group hover:shadow-xl transition-all duration-300 border-0 bg-white dark:bg-gray-900 overflow-hidden h-full flex flex-col">
+      {/* Poster Image */}
+      <div className="relative aspect-[2/3] bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-700">
+        {movie.posterUrl ? (
           <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
+            src={movie.posterUrl || '/placeholder-movie.svg'}
+            alt={movie.title}
+            fill
+            className="object-cover transition-transform duration-300 group-hover:scale-105"
+            sizes="(max-width: 768px) 50vw, (max-width: 1200px) 33vw, 25vw"
           />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+        ) : (
+          <div className="absolute inset-0 flex items-center justify-center">
+            <div className="text-center text-gray-400 dark:text-gray-600">
+              {movie.type === 'movie' ? (
+                <Film className="w-12 h-12 mx-auto mb-2" />
+              ) : (
+                <Tv className="w-12 h-12 mx-auto mb-2" />
+              )}
+              <p className="text-sm">No Poster</p>
+            </div>
+          </div>
+        )}
+        
+        {/* Overlay badges */}
+        <div className="absolute top-2 left-2 flex flex-col gap-1">
+          <Badge 
+            variant={movie.type === 'movie' ? 'default' : 'secondary'} 
+            className="text-xs bg-black/70 backdrop-blur-sm text-white border-0"
+          >
+            {movie.type === 'movie' ? 'Movie' : 'Series'}
+          </Badge>
+          {movie.isFeatured && (
+            <Badge className="text-xs bg-red-500/90 backdrop-blur-sm text-white border-0">
+              Featured
+            </Badge>
+          )}
+        </div>
+        
+        {movie.rating && (
+          <div className="absolute top-2 right-2">
+            <Badge className="text-xs bg-yellow-500/90 backdrop-blur-sm text-white border-0">
+              <Star className="w-3 h-3 mr-1 fill-white" />
+              {movie.rating}
+            </Badge>
+          </div>
+        )}
+        
+        {/* Play button overlay */}
+        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-all duration-300 flex items-center justify-center">
+          <div className="opacity-0 group-hover:opacity-100 transition-all duration-300 transform scale-90 group-hover:scale-100 flex gap-2">
+            <Button 
+              onClick={handleWatchClick}
+              className="bg-red-600/90 backdrop-blur-sm hover:bg-red-700/90 text-white border-0"
+              size="sm"
+            >
+              <Play className="w-4 h-4 fill-white" />
+            </Button>
+            <Link href={`/movie/${movie._id}`}>
+              <Button 
+                className="bg-white/20 backdrop-blur-sm hover:bg-white/30 text-white border-white/30"
+                size="sm"
+              >
+                Details
+              </Button>
+            </Link>
+          </div>
+        </div>
+      </div>
+      
+      {/* Content */}
+  <CardContent className="p-3 flex-1">
+        <Link href={`/movie/${movie._id}`} className="block group-hover:text-blue-600 transition-colors">
+          <h3 className="font-semibold text-sm leading-tight line-clamp-2 mb-2">
+            {movie.title}
+          </h3>
+        </Link>
+        
+        <div className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400 mb-2">
+          {movie.year && (
+            <span className="flex items-center gap-1">
+              <Calendar className="w-3 h-3" />
+              {movie.year}
+            </span>
+          )}
+          <span className="flex items-center gap-1">
+            <TrendingUp className="w-3 h-3" />
+            {movie.clickCount.toLocaleString()}
+          </span>
+        </div>
+        
+        <div className="flex flex-wrap gap-1">
+          {movie.genre.slice(0, 2).map((g) => (
+            <Badge key={g} variant="outline" className="text-xs px-1 py-0">
+              {g}
+            </Badge>
+          ))}
+          {movie.genre.length > 2 && (
+            <Badge variant="outline" className="text-xs px-1 py-0">
+              +{movie.genre.length - 2}
+            </Badge>
+          )}
+        </div>
+      </CardContent>
+    </Card>
+  )
+}
+
+const LoadingSkeleton = () => (
+  <Card className="overflow-hidden h-full flex flex-col">
+    {/* Poster skeleton */}
+    <Skeleton className="aspect-[2/3] w-full" />
+    
+    {/* Content skeleton */}
+  <CardContent className="p-3 space-y-2 flex-1">
+      <Skeleton className="h-4 w-3/4" />
+      <div className="flex justify-between">
+        <Skeleton className="h-3 w-12" />
+        <Skeleton className="h-3 w-16" />
+      </div>
+      <div className="flex gap-1">
+        <Skeleton className="h-5 w-12" />
+        <Skeleton className="h-5 w-12" />
+      </div>
+    </CardContent>
+  </Card>
+)
+
+const FeaturedSkeleton = () => (
+  <div className="relative overflow-hidden rounded-2xl">
+    <Skeleton className="w-full h-[280px] md:h-[320px]" />
+    <div className="absolute bottom-6 left-6 right-6 space-y-3">
+      <div className="flex gap-2">
+        <Skeleton className="h-6 w-16" />
+        <Skeleton className="h-6 w-20" />
+      </div>
+      <Skeleton className="h-8 w-3/4" />
+      <div className="flex gap-4">
+        <Skeleton className="h-4 w-12" />
+        <Skeleton className="h-4 w-16" />
+        <Skeleton className="h-4 w-20" />
+      </div>
+      <Skeleton className="h-10 w-32" />
     </div>
-  );
+  </div>
+)
+
+export default function HomePage() {
+  const [featuredMovies, setFeaturedMovies] = useState<Movie[]>([])
+  const [popularMovies, setPopularMovies] = useState<Movie[]>([])
+  const [recentMovies, setRecentMovies] = useState<Movie[]>([])
+  // ad banner moved to TopBanner in the global layout
+  const [loading, setLoading] = useState(true)
+  const [searchQuery, setSearchQuery] = useState('')
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setLoading(true)
+        console.log('Fetching data from API...')
+
+        const [featured, popular, recent] = await Promise.all([
+          moviesAPI.getFeatured(8),
+          moviesAPI.getPopular(12),
+          moviesAPI.getMovies({ limit: 12, sortBy: 'lastEpisodeAt', sortOrder: 'desc' })
+        ])
+
+        console.log('Featured movies response:', featured)
+        console.log('Popular movies response:', popular)
+        console.log('Recent movies response:', recent)
+
+        setFeaturedMovies(featured.data || [])
+        setPopularMovies(popular.data || [])
+        setRecentMovies(recent.data || [])
+      } catch (error) {
+        console.error('Error fetching data:', error)
+        // Set empty arrays on error to avoid undefined issues
+        setFeaturedMovies([])
+        setPopularMovies([])
+        setRecentMovies([])
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchData()
+  }, [])
+
+  // TopBanner component in layout handles ad rotation globally
+
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault()
+    if (searchQuery.trim()) {
+      window.location.href = `/movies?search=${encodeURIComponent(searchQuery)}`
+    }
+  }
+
+  return (
+    <div className="min-h-screen bg-white dark:bg-black">
+      
+      {/* Featured Hero Section - black & white theme */}
+      <section className="relative bg-black overflow-hidden">
+        <div className="absolute inset-0 bg-white/5" />
+        
+        <div className="relative z-10 container mx-auto px-4 py-8 md:py-12">
+          {/* Header (logo + search). Ads moved to sticky banner above */}
+          <div className="flex flex-col sm:flex-row items-center justify-between text-white mb-8 gap-4">
+            {/* Logo */}
+            <div className="flex items-center gap-3">
+              <div className="w-28 h-28 relative overflow-hidden flex items-center justify-center">
+                <Image src="/logo.png" alt="Logo" fill className="object-contain" />
+              </div>
+              <div>
+                <span className="text-lg font-semibold block">SMDrama</span>
+                
+              </div>
+            </div>
+
+            {/* Search Bar (small screens below the logo) */}
+            <form onSubmit={handleSearch} className="w-full sm:w-auto max-w-md mx-auto sm:mx-0">
+              <div className="relative">
+                <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                <Input
+                  type="text"
+                  placeholder="Search movies..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-12 pr-4 py-3 bg-white/10 backdrop-blur-sm border-white/20 text-white placeholder-white/70 rounded-full"
+                />
+                <Button 
+                  type="submit" 
+                  size="sm"
+                  className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-white text-black hover:bg-gray-100 rounded-full"
+                >
+                  <Search className="w-4 h-4" />
+                </Button>
+              </div>
+            </form>
+          </div>
+
+          {/* New mobile-first Featured strip: horizontal snap + decorative spacing */}
+          {featuredMovies.length > 0 && (
+            <section className="my-6">
+              <div className="flex items-center justify-between mb-3">
+                <div>
+                  <h2 className="text-xl font-bold text-white">🎯 Featured</h2>
+                  <p className="text-sm text-white/80">Top picks for you</p>
+                </div>
+                
+              </div>
+
+              {/* Horizontal scroll strip on mobile, grid on md+ */}
+              <div className="relative">
+                <div className="overflow-x-auto no-scrollbar snap-x snap-mandatory -mx-4 px-4 flex gap-4 items-stretch sm:hidden">
+                  {featuredMovies.map((movie) => (
+                    <div key={movie._id} className="snap-start w-[72%] sm:w-56 md:w-64 flex-shrink-0 h-full">
+                      <MovieCard movie={movie} />
+                    </div>
+                  ))}
+                </div>
+
+                {/* Desktop grid for larger screens */}
+                <div className="hidden sm:grid grid-cols-2 md:grid-cols-3 gap-4 auto-rows-fr items-stretch">
+                  {featuredMovies.map((movie) => (
+                    <div key={movie._id} className="h-full">
+                      <MovieCard movie={movie} />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </section>
+          )}
+          
+          {loading && (
+            <div className="max-w-6xl mx-auto">
+              <FeaturedSkeleton />
+            </div>
+          )}
+          
+          {/* Quick Access Buttons */}
+          <div className="mt-8 flex flex-col sm:flex-row gap-3 justify-center">
+            <Link href="/movies">
+              <Button 
+                size="lg" 
+                className="bg-white text-black hover:bg-gray-100 w-full sm:w-auto"
+              >
+                <Film className="w-5 h-5 mr-2" />
+                Browse All Movies & Series
+                <ChevronRight className="w-4 h-4 ml-2" />
+              </Button>
+            </Link>
+            
+          </div>
+        </div>
+      </section>
+
+      <div className="container mx-auto px-4 py-8 space-y-12">
+        
+        {/* More Featured Content */}
+        {featuredMovies.length > 5 && (
+          <section>
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <h2 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white mb-2">
+                  ⭐ More Featured
+                </h2>
+                <p className="text-gray-600 dark:text-gray-400">
+                  Editor&apos;s choice movies and series
+                </p>
+              </div>
+              <Link href="/movies?featured=true">
+                <Button variant="outline" className="hidden sm:flex">
+                  View All
+                  <ChevronRight className="w-4 h-4 ml-2" />
+                </Button>
+              </Link>
+            </div>
+            
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+              {loading ? (
+                Array.from({ length: 6 }).map((_, i) => <LoadingSkeleton key={i} />)
+              ) : (
+                featuredMovies.slice(5).map((movie) => <MovieCard key={movie._id} movie={movie} />)
+              )}
+            </div>
+            
+            <div className="text-center mt-6 sm:hidden">
+              <Link href="/movies?featured=true">
+                <Button variant="outline">
+                  View All Featured
+                  <ChevronRight className="w-4 h-4 ml-2" />
+                </Button>
+              </Link>
+            </div>
+          </section>
+        )}
+
+        {/* Trending Now */}
+        <section>
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <h2 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white mb-2">
+                🔥 Trending Now
+              </h2>
+              <p className="text-gray-600 dark:text-gray-400">
+                Most watched this week
+              </p>
+            </div>
+            <Link href="/movies?sortBy=clickCount&sortOrder=desc">
+              <Button variant="outline" className="hidden sm:flex">
+                View All
+                <ChevronRight className="w-4 h-4 ml-2" />
+              </Button>
+            </Link>
+          </div>
+          
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+            {loading ? (
+              Array.from({ length: 12 }).map((_, i) => <LoadingSkeleton key={i} />)
+            ) : (
+              popularMovies.map((movie) => <MovieCard key={movie._id} movie={movie} />)
+            )}
+          </div>
+          
+          <div className="text-center mt-6 sm:hidden">
+            <Link href="/movies?sortBy=clickCount&sortOrder=desc">
+              <Button variant="outline">
+                View All Trending
+                <ChevronRight className="w-4 h-4 ml-2" />
+              </Button>
+            </Link>
+          </div>
+        </section>
+
+        {/* Recently Added */}
+        <section>
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <h2 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white mb-2">
+                🆕 Recently Added
+              </h2>
+              <p className="text-gray-600 dark:text-gray-400">
+                Fresh content just uploaded
+              </p>
+            </div>
+            <Link href="/movies?sortBy=createdAt&sortOrder=desc">
+              <Button variant="outline" className="hidden sm:flex">
+                View All
+                <ChevronRight className="w-4 h-4 ml-2" />
+              </Button>
+            </Link>
+          </div>
+          
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+            {loading ? (
+              Array.from({ length: 12 }).map((_, i) => <LoadingSkeleton key={i} />)
+            ) : (
+              recentMovies.map((movie) => <MovieCard key={movie._id} movie={movie} />)
+            )}
+          </div>
+          
+          <div className="text-center mt-6 sm:hidden">
+            <Link href="/movies?sortBy=createdAt&sortOrder=desc">
+              <Button variant="outline">
+                View All Recent
+                <ChevronRight className="w-4 h-4 ml-2" />
+              </Button>
+            </Link>
+          </div>
+        </section>
+      </div>
+      
+      {/* Scroll to Top Button */}
+      <ScrollToTop />
+    </div>
+  )
 }
