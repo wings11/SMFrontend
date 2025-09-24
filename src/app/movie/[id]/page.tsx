@@ -21,6 +21,7 @@ import {
 } from 'lucide-react'
 import Link from 'next/link'
 import Image from 'next/image'
+import { isLikelyImageUrl } from '@/lib/imageUtils'
 import { moviesAPI } from '@/lib/api'
 
 // Client-only Comments component (UI only, no backend integration yet)
@@ -395,7 +396,7 @@ const MovieDetailPage = () => {
           <div className="lg:col-span-1">
             <Card className="overflow-hidden">
               <div className="relative aspect-[2/3] bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-700">
-                {movie.posterUrl ? (
+                {movie.posterUrl && isLikelyImageUrl(movie.posterUrl) ? (
                   <Image
                     src={movie.posterUrl}
                     alt={movie.title}

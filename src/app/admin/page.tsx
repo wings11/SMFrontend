@@ -124,50 +124,85 @@ const MovieForm = ({
   const [fetchUrl, setFetchUrl] = useState('')
   const [isFetching, setIsFetching] = useState(false)
   const [fetchSuccess, setFetchSuccess] = useState(false)
+  // use separate string states for the comma-separated inputs so typing
+  // isn't clobbered by array normalization on every keystroke
+  const [genreString, setGenreString] = useState('')
+  const [tagsString, setTagsString] = useState('')
+
+  // Initialize form data only when the dialog opens or when a different movie is selected
+  // This prevents mid-edit re-initialization while the admin is typing
+  // Track last initialized id to avoid re-initializing formData when parent
+  // re-renders and passes a new object reference with the same id.
+  const lastInitializedIdRef = React.useRef<string | 'new' | null>(null)
 
   useEffect(() => {
-    if (movie) {
-      setFormData({
-        title: movie.title,
-        type: movie.type,
-        year: movie.year || new Date().getFullYear(),
-        genre: movie.genre,
-        description: movie.description,
-        telegramLink: movie.telegramLink,
-        posterUrl: movie.posterUrl || '',
-        trailerUrl: movie.trailerUrl || '',
-        backdropUrl: movie.backdropUrl || '',
-        imdbRating: movie.imdbRating || 0,
-        tmdbRating: movie.tmdbRating || 0,
-        rottenTomatoesRating: movie.rottenTomatoesRating || 0,
-        metacriticRating: movie.metacriticRating || 0,
-        seasons: movie.seasons || 1,
-        tags: movie.tags,
-        isFeatured: movie.isFeatured
-      })
-    } else {
-      setFormData({
-        title: '',
-        type: 'movie',
-        year: new Date().getFullYear(),
-        genre: [],
-        description: '',
-        telegramLink: '',
-        posterUrl: '',
-        trailerUrl: '',
-        backdropUrl: '',
-        imdbRating: 0,
-        tmdbRating: 0,
-        rottenTomatoesRating: 0,
-        metacriticRating: 0,
-        seasons: 1,
-        tags: [],
-        isFeatured: false
-      })
-      setFetchUrl('')
-      setFetchSuccess(false)
+    if (!isOpen) {
+      // reset tracker when dialog is closed so opening again will initialize
+      lastInitializedIdRef.current = null
+      return
     }
-  }, [movie, isOpen])
+
+    // If editing an existing movie: only initialize if the id changed
+    if (movie) {
+      if (lastInitializedIdRef.current !== movie._id) {
+        setFormData({
+          title: movie.title,
+          type: movie.type,
+          year: movie.year || new Date().getFullYear(),
+          genre: movie.genre || [],
+          description: movie.description || '',
+          telegramLink: movie.telegramLink || '',
+          posterUrl: movie.posterUrl || '',
+          trailerUrl: movie.trailerUrl || '',
+          backdropUrl: movie.backdropUrl || '',
+          imdbRating: movie.imdbRating || 0,
+          tmdbRating: movie.tmdbRating || 0,
+          rottenTomatoesRating: movie.rottenTomatoesRating || 0,
+          metacriticRating: movie.metacriticRating || 0,
+          seasons: movie.seasons || 1,
+          tags: movie.tags || [],
+          isFeatured: !!movie.isFeatured
+        })
+        // initialize the editable comma-separated strings
+        setGenreString((movie.genre || []).join(', '))
+        setTagsString((movie.tags || []).join(', '))
+        // Load episodes for series (keep existing episodes state if already loaded)
+        setFetchUrl('')
+        setFetchSuccess(false)
+        lastInitializedIdRef.current = movie._id
+      }
+    } else {
+      // only reset when dialog opens for creating a new movie and not on unrelated re-renders
+      if (lastInitializedIdRef.current !== 'new') {
+        setFormData({
+          title: '',
+          type: 'movie',
+          year: new Date().getFullYear(),
+          genre: [],
+          description: '',
+          telegramLink: '',
+          posterUrl: '',
+          trailerUrl: '',
+          backdropUrl: '',
+          imdbRating: 0,
+          tmdbRating: 0,
+          rottenTomatoesRating: 0,
+          metacriticRating: 0,
+          seasons: 1,
+          tags: [],
+          isFeatured: false
+        })
+        setGenreString('')
+        setTagsString('')
+        setFetchUrl('')
+        setFetchSuccess(false)
+        setEpisodes([])
+        lastInitializedIdRef.current = 'new'
+      }
+    }
+    // Only run when isOpen changes or the movie id changes (we read movie?._id here)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen, movie ? movie._id : null])
 
   // Load episodes when editing a series using the centralized moviesAPI (axios)
   useEffect(() => {
@@ -225,6 +260,9 @@ const MovieForm = ({
           seasons: movieData.seasons || 1,
           tags: movieData.tags
         }))
+        // also update the editable strings
+        setGenreString((movieData.genre || []).join(', '))
+        setTagsString((movieData.tags || []).join(', '))
         console.log('Updated form data with trailer:', movieData.trailerUrl); // Debug log
         setFetchSuccess(true)
       }
@@ -237,19 +275,21 @@ const MovieForm = ({
   }
 
   const handleGenreChange = (genreString: string) => {
-    const genres = genreString.split(',').map(g => g.trim()).filter(g => g)
-    setFormData(prev => ({ ...prev, genre: genres }))
+    setGenreString(genreString)
   }
 
   const handleTagsChange = (tagsString: string) => {
-    const tags = tagsString.split(',').map(t => t.trim()).filter(t => t)
-    setFormData(prev => ({ ...prev, tags }))
+    setTagsString(tagsString)
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     try {
-      const resp = await onSubmit({ ...formData, episodes })
+      // Build submission payload: take arrays from the comma-separated strings
+      const genres = genreString.split(',').map(g => g.trim()).filter(Boolean)
+      const tags = tagsString.split(',').map(t => t.trim()).filter(Boolean)
+      const submitData = { ...formData, genre: genres, tags, episodes }
+      const resp = await onSubmit(submitData)
       if (resp) {
         const r = resp as unknown as Record<string, unknown>
         if (r.episodes) {
@@ -300,11 +340,11 @@ const MovieForm = ({
         {/* Auto-fetch section - only for new movies */}
         {!movie && (
           <div className="border rounded-lg p-4 bg-gray-50 dark:bg-gray-800">
-            <Label htmlFor="fetchUrl">Auto-fetch from URL</Label>
+            <Label htmlFor="fetchUrl">Auto-fetch from URL (IMDb / TMDB / AsianWiki)</Label>
             <div className="flex gap-2 mt-2">
               <Input
                 id="fetchUrl"
-                placeholder="https://www.imdb.com/title/tt1234567/ or https://www.themoviedb.org/movie/12345"
+                placeholder="https://www.imdb.com/title/tt1234567/ or https://www.themoviedb.org/movie/12345 or https://asianwiki.com/My_Youth"
                 value={fetchUrl}
                 onChange={(e) => setFetchUrl(e.target.value)}
               />
@@ -465,7 +505,7 @@ const MovieForm = ({
             <Input
               id="genre"
               placeholder="Action, Drama, Thriller"
-              value={formData.genre.join(', ')}
+              value={genreString}
               onChange={(e) => handleGenreChange(e.target.value)}
             />
           </div>
@@ -513,7 +553,7 @@ const MovieForm = ({
             <Input
               id="tags"
               placeholder="superhero, action, marvel"
-              value={formData.tags.join(', ')}
+              value={tagsString}
               onChange={(e) => handleTagsChange(e.target.value)}
             />
           </div>

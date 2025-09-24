@@ -12,6 +12,7 @@ import { ScrollToTop } from '@/components/ui/scroll-to-top'
 import { Star, Calendar, Clock, Play, TrendingUp, Search, Film, Tv, ChevronRight, Plus } from 'lucide-react'
 import Link from 'next/link'
 import Image from 'next/image'
+import { isLikelyImageUrl } from '@/lib/imageUtils'
 import { moviesAPI } from '@/lib/api'
 
 interface Movie {
@@ -67,9 +68,9 @@ const MovieCard = ({ movie, featured = false }: { movie: Movie; featured?: boole
           {/* Poster Image */}
           <div className="relative w-full md:w-48 lg:w-56 flex-shrink-0">
             <div className="aspect-[2/3] md:h-full relative">
-              {movie.posterUrl ? (
+              {isLikelyImageUrl(movie.posterUrl) ? (
                 <Image
-                  src={movie.posterUrl || '/placeholder-movie.svg'}
+                  src={movie.posterUrl as string}
                   alt={movie.title}
                   fill
                   className="object-cover"
@@ -196,15 +197,15 @@ const MovieCard = ({ movie, featured = false }: { movie: Movie; featured?: boole
     <Card className="group hover:shadow-xl transition-all duration-300 border-0 bg-white dark:bg-gray-900 overflow-hidden h-full flex flex-col">
       {/* Poster Image */}
       <div className="relative aspect-[2/3] bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-700">
-        {movie.posterUrl ? (
-          <Image
-            src={movie.posterUrl || '/placeholder-movie.svg'}
-            alt={movie.title}
-            fill
-            className="object-cover transition-transform duration-300 group-hover:scale-105"
-            sizes="(max-width: 768px) 50vw, (max-width: 1200px) 33vw, 25vw"
-          />
-        ) : (
+              {movie.posterUrl ? (
+                <Image
+                  src={isLikelyImageUrl(movie.posterUrl) ? movie.posterUrl! : '/placeholder-movie.svg'}
+                  alt={movie.title}
+                  fill
+                  className="object-cover transition-transform duration-300 group-hover:scale-105"
+                  sizes="(max-width: 768px) 50vw, (max-width: 1200px) 33vw, 25vw"
+                />
+              ) : (
           <div className="absolute inset-0 flex items-center justify-center">
             <div className="text-center text-gray-400 dark:text-gray-600">
               {movie.type === 'movie' ? (

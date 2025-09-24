@@ -33,6 +33,28 @@ const nextConfig: NextConfig = {
         port: '',
         pathname: '/**',
       }
+      ,
+      {
+        protocol: 'https',
+        hostname: 'photos.hancinema.net',
+        port: '',
+        pathname: '/**',
+      }
+      ,
+      // Permissive entries for development: allow any hostname over https or http.
+      // NOTE: Allowing all hosts is convenient for dev but has caching/security trade-offs in production.
+      {
+        protocol: 'https',
+        hostname: '**',
+        port: '',
+        pathname: '/**',
+      },
+      {
+        protocol: 'http',
+        hostname: '**',
+        port: '',
+        pathname: '/**',
+      }
     ],
   },
 };

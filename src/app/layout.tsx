@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { Providers } from "@/components/providers";
 import TopBanner from '@/components/TopBanner'
+import Footer from '@/components/Footer'
 
 // Force recompilation
 
@@ -17,8 +18,11 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Translated Movies & Series",
+  title: "SM-Survival Myanmar",
   description: "Watch your favorite movies and series with translations. High-quality content delivered through Telegram.",
+  icons: {
+    icon: '/favicon.ico',
+  },
 };
 
 export default function RootLayout({
@@ -34,6 +38,7 @@ export default function RootLayout({
         <Providers>
           <TopBanner />
           {children}
+          <Footer />
         </Providers>
       </body>
     </html>

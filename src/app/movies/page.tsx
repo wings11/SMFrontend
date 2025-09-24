@@ -7,10 +7,11 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ExpandableText } from '@/components/ui/expandable-text';
+// expandable text removed for compact movies grid
 import { ScrollToTop } from '@/components/ui/scroll-to-top';
 import { Film, Star, Clock, Calendar, TrendingUp, Search, Filter, ChevronLeft, ChevronRight, Tv, Play } from 'lucide-react';
 import Image from 'next/image'
+import { isLikelyImageUrl } from '@/lib/imageUtils'
 import Link from 'next/link';
 
 interface Movie {
@@ -22,6 +23,7 @@ interface Movie {
   genre: string[];
   language: string;
   description?: string;
+  posterUrl?: string;
   rating?: number;
   duration?: string;
   seasons?: number;
@@ -156,45 +158,55 @@ const MoviesPage = () => {
 
   const MovieCard: React.FC<{ movie: Movie }> = ({ movie }) => (
     <Card className="group cursor-pointer transition-all duration-300 hover:shadow-lg hover:scale-105">
+      {/* Poster */}
+      <div className="relative aspect-[2/3] bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-700 overflow-hidden">
+        {movie && isLikelyImageUrl(movie.posterUrl) ? (
+          <Image
+            src={movie.posterUrl!}
+            alt={movie.title}
+            fill
+            className="object-cover transition-transform duration-300 group-hover:scale-105"
+            sizes="(max-width: 768px) 50vw, (max-width: 1200px) 33vw, 25vw"
+          />
+        ) : (
+          <Image src="/placeholder-movie.svg" alt={movie.title} fill className="object-cover" />
+        )}
+        {/* Type badge overlay (inside poster) */}
+        <div className="absolute top-2 right-2">
+          <Badge className="text-xs bg-black/70 text-white border-0">
+            {movie.type === 'movie' ? 'Movie' : 'Series'}
+          </Badge>
+        </div>
+      </div>
       <CardHeader className="pb-2">
         <div className="flex items-start justify-between">
           <div className="flex-1">
             <Link href={`/movie/${movie._id}`} className="block hover:text-blue-600 transition-colors">
-              <CardTitle className="text-lg line-clamp-2">
+              <CardTitle className="text-sm md:text-lg line-clamp-2">
                 {movie.title}
               </CardTitle>
             </Link>
             {movie.originalTitle && movie.originalTitle !== movie.title && (
-              <p className="text-sm text-muted-foreground mt-1">{movie.originalTitle}</p>
+              <p className="text-xs text-muted-foreground mt-1">{movie.originalTitle}</p>
             )}
           </div>
-          <Badge variant={movie.type === 'movie' ? 'default' : 'secondary'}>
-            {movie.type}
-          </Badge>
+          {/* badge moved into poster overlay to give title more space */}
         </div>
       </CardHeader>
       
       <CardContent className="pt-0">
-        <div className="space-y-2 mb-4">
-          {movie.description && (
-            <ExpandableText
-              text={movie.description}
-              maxLines={2}
-              className="text-sm text-muted-foreground"
-              variant="compact"
-            />
-          )}
-          
+        {/* Removed description to keep movies grid compact; details available on detail page */}
+        <div className="mb-2">
           <div className="flex flex-wrap gap-1">
             {movie.genre.slice(0, 3).map((g) => (
-              <Badge key={g} variant="outline" className="text-xs">
+              <Badge key={g} variant="outline" className="text-[10px]">
                 {g}
               </Badge>
             ))}
           </div>
         </div>
 
-        <div className="space-y-2 text-xs text-muted-foreground">
+        <div className="space-y-1 text-[11px] text-muted-foreground">
           {movie.year && (
             <div className="flex items-center">
               <Calendar className="h-3 w-3 mr-1" />
@@ -229,16 +241,16 @@ const MoviesPage = () => {
           </div>
         </div>
 
-        <div className="flex gap-2 mt-4">
+        <div className="flex flex-col sm:flex-row gap-2 mt-4">
           <Button 
-            className="flex-1"
+            className="w-full sm:flex-1"
             onClick={() => handleMovieClick(movie._id)}
           >
             <Play className="w-4 h-4 mr-2" />
             Watch Now
           </Button>
           <Link href={`/movie/${movie._id}`}>
-            <Button variant="outline" size="sm">
+            <Button variant="outline" size="sm" className="w-full sm:w-auto">
               Details
             </Button>
           </Link>
@@ -416,10 +428,10 @@ const MoviesPage = () => {
 
       {/* Movies Grid */}
       {loading ? (
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+        <div className="grid gap-6 grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {Array.from({ length: 12 }).map((_, i) => (
             <div key={i} className="animate-pulse">
-              <div className="bg-gray-200 h-64 rounded-lg mb-4"></div>
+              <div className="bg-gray-200 h-56 rounded-lg mb-4"></div>
               <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
               <div className="h-3 bg-gray-200 rounded w-1/2"></div>
             </div>
@@ -436,7 +448,7 @@ const MoviesPage = () => {
         </div>
       ) : (
         <>
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 mb-8">
+          <div className="grid gap-6 grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 mb-8">
             {movies.map((movie) => (
               <MovieCard key={movie._id} movie={movie} />
             ))}
