@@ -238,11 +238,19 @@ const MovieDetailPage = () => {
     if (!movie) return
     
     try {
+      // Open a blank window synchronously so mobile/Safari treat navigation as user-initiated
+      const win = window.open('', '_blank')
       const response = await moviesAPI.clickMovie(movie._id)
       if (response.success && response.telegramLink) {
-        window.open(response.telegramLink, '_blank')
+        if (win) {
+          win.location.href = response.telegramLink
+        } else {
+          window.location.href = response.telegramLink
+        }
         // Update click count locally
         setMovie(prev => prev ? { ...prev, clickCount: prev.clickCount + 1 } : null)
+      } else {
+        if (win) win.close()
       }
     } catch (error) {
       console.error('Error getting telegram link:', error)
@@ -555,18 +563,25 @@ const MovieDetailPage = () => {
                                 <div className="flex items-center gap-2">
                                   <Button size="sm" className="bg-red-600 text-white" onClick={async () => {
                                     try {
+                                      // Open blank window synchronously to satisfy mobile browsers
+                                      const win = window.open('', '_blank')
                                       const { default: api } = await import('@/lib/api')
                                       const resp = await api.post(`/episodes/${ep._id}/click`)
                                       const j = resp.data
                                       if (j && j.watchUrl) {
                                         const watchUrl = j.watchUrl
-                                        window.open(watchUrl, '_blank')
+                                        if (win) {
+                                          win.location.href = watchUrl
+                                        } else {
+                                          window.location.href = watchUrl
+                                        }
                                         // update local episode click count
                                         setEpisodes(prev => prev.map(p => p._id === ep._id ? { ...p, clickCount: (p.clickCount||0)+1 } : p))
                                         // also increment parent movie click count locally so UI updates immediately
                                         setMovie(prev => prev ? { ...prev, clickCount: (prev.clickCount||0) + 1 } : prev)
                                       } else {
                                         console.warn('Episode click endpoint returned no watchUrl', j)
+                                        if (win) win.close()
                                       }
                                     } catch (err) {
                                       console.error('Error getting episode link', err)

@@ -40,9 +40,20 @@ interface Movie {
 const MovieCard = ({ movie, featured = false }: { movie: Movie; featured?: boolean }) => {
   const handleWatchClick = async () => {
     try {
+      // Open a blank window synchronously to ensure mobile/Safari treat this as a user-initiated navigation
+      const win = window.open('', '_blank')
       const response = await moviesAPI.clickMovie(movie._id)
-      if (response.success) {
-        window.open(response.telegramLink, '_blank')
+      if (response.success && response.telegramLink) {
+        if (win) {
+          // navigate the pre-opened window to the telegram link
+          win.location.href = response.telegramLink
+        } else {
+          // fallback if the window failed to open
+          window.location.href = response.telegramLink
+        }
+      } else {
+        // Close the blank window if no link returned
+        if (win) win.close()
       }
     } catch (error) {
       console.error('Error getting telegram link:', error)

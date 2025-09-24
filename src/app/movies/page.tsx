@@ -114,9 +114,19 @@ const MoviesPage = () => {
 
   const handleMovieClick = async (movieId: string) => {
     try {
+      // Open a blank window synchronously so mobile browsers treat the navigation as user-initiated
+      const win = window.open('', '_blank')
       const response = await moviesAPI.clickMovie(movieId);
-      window.open(response.telegramLink, '_blank');
-      
+      if (response && response.telegramLink) {
+        if (win) {
+          win.location.href = response.telegramLink
+        } else {
+          window.location.href = response.telegramLink
+        }
+      } else {
+        if (win) win.close()
+      }
+
       // Update the movie's click count in the local state
       setMovies(prev => prev.map(movie => 
         movie._id === movieId 
