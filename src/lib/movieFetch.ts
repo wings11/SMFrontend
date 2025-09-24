@@ -1,5 +1,6 @@
 // Movie data fetching service
 import axios from 'axios';
+import { API_BASE_URL } from './api';
 
 // You'll need to get API keys for these services
 const OMDB_API_KEY = process.env.NEXT_PUBLIC_OMDB_API_KEY || '';
@@ -301,7 +302,20 @@ class MovieFetchService {
     // Support asianwiki links by calling backend proxy
     if (/asianwiki\.com/i.test(url)) {
       try {
-        const resp = await axios.get('/api/asianwiki', { params: { url } });
+        // Try the configured API base URL first, then fall back to a relative '/api/asianwiki'
+        const endpoint = `${API_BASE_URL.replace(/\/$/, '')}/asianwiki`;
+        let resp;
+        try {
+          resp = await axios.get(endpoint, { params: { url } });
+        } catch (err) {
+          try {
+            resp = await axios.get('/api/asianwiki', { params: { url } });
+          } catch (err2) {
+            // Both attempts failed — log and return null to the caller
+            console.error('AsianWiki fetch failed (primary and fallback):', err, err2);
+            return null;
+          }
+        }
         if (resp && resp.data) {
           const d = resp.data;
           const movieData: MovieDetails = {
@@ -326,8 +340,34 @@ class MovieFetchService {
           return movieData;
         }
         return null;
-      } catch (err) {
-        console.error('Error fetching AsianWiki data:', err);
+      } catch (errAny) {
+        const e: unknown = errAny;
+        // Propagate more useful error info for debug (server may return HTML error pages)
+        // Extract a useful message safely
+        let msg = '';
+        try {
+          if (typeof e === 'object' && e !== null) {
+            // JSON.stringify will gracefully handle many error shapes
+            msg = JSON.stringify(e, Object.getOwnPropertyNames(e)).slice(0, 500);
+          } else {
+            msg = String(e);
+          }
+        } catch {
+          msg = String(e);
+        }
+
+        console.error('Error fetching AsianWiki data:', msg);
+
+        // Try to extract server response snippet if present (defensive JSON stringify)
+        try {
+          if (typeof e === 'object' && e !== null) {
+            const raw = JSON.stringify(e, Object.getOwnPropertyNames(e)).slice(0, 1000);
+            if (raw && raw.length) console.error('Server error payload snippet:', raw);
+          }
+        } catch {
+          // ignore stringify errors
+        }
+
         return null;
       }
     }
