@@ -1,18 +1,53 @@
 "use client"
 
 import React, { useEffect, useRef, useState } from 'react'
-import Image from 'next/image'
+
+function driveToDirectUrl(url?: string) {
+  if (!url) return undefined
+  try {
+    const u = new URL(url)
+    // Drive share: /file/d/FILE_ID/view
+    const match = u.pathname.match(/\/file\/d\/([^\/]+)/)
+    if (match && match[1]) {
+      return `https://drive.google.com/uc?export=download&id=${match[1]}`
+    }
+    // If already a uc link or direct, return as-is
+    if (u.hostname.includes('drive.google.com')) return url
+    return url
+  } catch {
+    return url
+  }
+}
+
+function extractYouTubeId(url?: string) {
+  if (!url) return null
+  try {
+    // support youtu.be/ID and youtube.com/watch?v=ID and embed links
+    const u = new URL(url)
+    if (u.hostname === 'youtu.be') return u.pathname.slice(1)
+    if (u.hostname.includes('youtube.com')) {
+      if (u.pathname.startsWith('/watch')) return u.searchParams.get('v')
+      const match = u.pathname.match(/\/embed\/([^\/]+)/)
+      if (match && match[1]) return match[1]
+    }
+    return null
+  } catch {
+    return null
+  }
+}
 
 export default function TopBanner() {
-  const [featuredAds, setFeaturedAds] = useState<Array<{ image?: string; link?: string }>>([])
+  const [featuredAds, setFeaturedAds] = useState<Array<{ image?: string; link?: string; video?: string }>>([])
   const [activeAdIdx, setActiveAdIdx] = useState(0)
   const adTimerRef = useRef<number | null>(null)
 
   useEffect(() => {
     // Seed with static placeholders. For dynamic ads, replace with fetch('/api/ads')
     setFeaturedAds([
-      { image: '/ads/sponsor-placeholder.svg', link: '#' },
-      { image: '/ads/sponsor-placeholder.svg', link: '#' }
+      // Show the repo GIF (keep full visible and animated). Use encoded space in filename for correct URL.
+      { image: '/ads/ads.gif', link: '#' },
+      // Use provided YouTube URL for banner
+      // { video: 'https://youtu.be/e9P6-9-PNXo?si=OkkPSKzJKk8jIqY9', link: '#' }
     ])
   }, [])
 
@@ -27,13 +62,42 @@ export default function TopBanner() {
     }
   }, [featuredAds])
 
+  const currentAd = featuredAds && featuredAds.length > 0 ? featuredAds[activeAdIdx] : null
+  const ytId = currentAd ? extractYouTubeId(currentAd.video) : null
+
   return (
     <div className="sticky top-0 z-40">
-      {featuredAds && featuredAds.length > 0 ? (
-        <div className="w-full bg-black/80 flex items-center justify-center">
-          <a href={featuredAds[activeAdIdx]?.link || '#'} className="w-full max-w-4xl">
-            <Image src={featuredAds[activeAdIdx].image || '/placeholder-movie.jpg'} alt="Ad" width={1200} height={180} className="w-full h-20 md:h-28 object-cover rounded-b-md" />
-          </a>
+      {currentAd ? (
+        <div className="w-full bg-black/80">
+          {currentAd.video ? (
+            ytId ? (
+              <div className="w-full h-20 md:h-28 overflow-hidden">
+                <iframe
+                  src={`https://www.youtube.com/embed/${ytId}?autoplay=1&mute=1&controls=0&loop=1&playlist=${ytId}&modestbranding=1&rel=0&playsinline=1`}
+                  title="Ad video"
+                  className="w-full h-full object-cover"
+                  allow="autoplay; encrypted-media; picture-in-picture"
+                  allowFullScreen
+                  frameBorder={0}
+                />
+              </div>
+            ) : (
+              <div className="w-full h-20 md:h-28 overflow-hidden">
+                <video
+                  src={driveToDirectUrl(currentAd.video)}
+                  className="w-full h-full object-cover"
+                  autoPlay
+                  muted
+                  loop
+                  playsInline
+                />
+              </div>
+            )
+          ) : (
+            <div className="w-full h-20 md:h-28 overflow-hidden">
+              <img key={activeAdIdx} src={currentAd.image || '/placeholder-movie.jpg'} alt="Ad" className="w-full h-full object-cover" />
+            </div>
+          )}
         </div>
       ) : (
         <div className="w-full bg-black/80 flex items-center justify-center">

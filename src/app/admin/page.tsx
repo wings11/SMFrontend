@@ -477,7 +477,7 @@ const MovieForm = ({
               id="genre"
               placeholder="Action, Drama, Thriller"
               value={formData.genre.join(', ')}
-              onChange={(e) => handleGenreChange(e.target.value)}
+              onChange={(e) => { handleGenreChange(e.target.value); console.log('genre input change', e.target.value); }}
             />
           </div>
 
@@ -525,7 +525,7 @@ const MovieForm = ({
               id="tags"
               placeholder="superhero, action, marvel"
               value={formData.tags.join(', ')}
-              onChange={(e) => handleTagsChange(e.target.value)}
+              onChange={(e) => { handleTagsChange(e.target.value); console.log('tags input change', e.target.value); }}
             />
           </div>
 

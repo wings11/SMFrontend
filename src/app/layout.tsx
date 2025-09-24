@@ -4,6 +4,7 @@ import "./globals.css";
 import { Providers } from "@/components/providers";
 import TopBanner from '@/components/TopBanner'
 import Footer from '@/components/Footer'
+import FloatingNav from '@/components/FloatingNav'
 
 // Force recompilation
 
@@ -33,12 +34,15 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        className={`${geistSans.variable} ${geistMono.variable} antialiased min-h-screen flex flex-col`}
       >
         <Providers>
           <TopBanner />
-          {children}
+          <main className="flex-1">
+            {children}
+          </main>
           <Footer />
+          <FloatingNav />
         </Providers>
       </body>
     </html>
