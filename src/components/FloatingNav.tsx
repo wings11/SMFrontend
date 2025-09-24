@@ -9,11 +9,11 @@ export default function FloatingNav() {
 
   return (
     <>
-      <div className="fixed left-4 bottom-6 z-50">
+      <div className="fixed left-4 bottom-6 z-[9999]">
         <button
-          aria-label="Open navigation"
+          aria-label={open ? 'Close navigation' : 'Open navigation'}
           onClick={() => setOpen((v) => !v)}
-          className="bg-red-600 text-white p-3 rounded-full shadow-lg focus:outline-none"
+          className="bg-[#176DA6] text-white p-3 rounded-full shadow-lg focus:outline-none"
         >
           {open ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
         </button>

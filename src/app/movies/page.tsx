@@ -243,7 +243,7 @@ const MoviesPage = () => {
 
         <div className="flex flex-col sm:flex-row gap-2 mt-4">
           <Button 
-            className="w-full sm:flex-1"
+            className="w-full sm:flex-1 bg-[#176DA6] hover:bg-[#135685] text-white"
             onClick={() => handleMovieClick(movie._id)}
           >
             <Play className="w-4 h-4 mr-2" />

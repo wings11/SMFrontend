@@ -104,7 +104,7 @@ const MovieCard = ({ movie, featured = false }: { movie: Movie; featured?: boole
             
             {/* Featured Badge */}
             <div className="absolute top-3 right-3">
-              <Badge className="text-xs bg-red-500 text-white border-0">
+              <Badge className="text-xs bg-[#176DA6] text-white border-0">
                 ⭐ Featured
               </Badge>
             </div>
@@ -168,9 +168,9 @@ const MovieCard = ({ movie, featured = false }: { movie: Movie; featured?: boole
             
             {/* Watch Button */}
             <div className="mt-4 flex gap-3">
-              <Button 
+                <Button 
                 onClick={handleWatchClick}
-                className="flex-1 bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white border-0 shadow-lg"
+                className="flex-1 bg-gradient-to-r from-[#176DA6] to-[#135685] hover:from-[#135685] hover:to-[#0f4664] text-white border-0 shadow-lg"
                 size="lg"
               >
                 <Play className="w-5 h-5 mr-2 fill-white" />
@@ -227,7 +227,7 @@ const MovieCard = ({ movie, featured = false }: { movie: Movie; featured?: boole
             {movie.type === 'movie' ? 'Movie' : 'Series'}
           </Badge>
           {movie.isFeatured && (
-            <Badge className="text-xs bg-red-500/90 backdrop-blur-sm text-white border-0">
+            <Badge className="text-xs bg-[#176DA6]/90 backdrop-blur-sm text-white border-0">
               Featured
             </Badge>
           )}
@@ -247,7 +247,7 @@ const MovieCard = ({ movie, featured = false }: { movie: Movie; featured?: boole
           <div className="opacity-0 group-hover:opacity-100 transition-all duration-300 transform scale-90 group-hover:scale-100 flex gap-2">
             <Button 
               onClick={handleWatchClick}
-              className="bg-red-600/90 backdrop-blur-sm hover:bg-red-700/90 text-white border-0"
+              className="bg-[#176DA6]/90 backdrop-blur-sm hover:bg-[#135685]/90 text-white border-0"
               size="sm"
             >
               <Play className="w-4 h-4 fill-white" />

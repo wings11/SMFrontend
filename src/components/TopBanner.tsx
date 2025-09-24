@@ -45,7 +45,7 @@ export default function TopBanner() {
     // Seed with static placeholders. For dynamic ads, replace with fetch('/api/ads')
     setFeaturedAds([
       // Show the repo GIF (keep full visible and animated). Use encoded space in filename for correct URL.
-      { image: '/ads/ads.gif', link: '#' },
+      { image: '/ads/sponsor-placeholder.svg', link: '#' },
       // Use provided YouTube URL for banner
       // { video: 'https://youtu.be/e9P6-9-PNXo?si=OkkPSKzJKk8jIqY9', link: '#' }
     ])
@@ -66,37 +66,32 @@ export default function TopBanner() {
   const ytId = currentAd ? extractYouTubeId(currentAd.video) : null
 
   return (
-    <div className="sticky top-0 z-40">
+    <div className="sticky top-0 z-40 flex justify-center bg-black/80">
       {currentAd ? (
-        <div className="w-full bg-black/80">
+        // Center a fixed-size ad container (1200x180) so the top banner does not grow on large screens
+        <div className="w-[1200px] h-[180px] relative">
           {currentAd.video ? (
             ytId ? (
-              <div className="w-full h-20 md:h-28 overflow-hidden">
-                <iframe
-                  src={`https://www.youtube.com/embed/${ytId}?autoplay=1&mute=1&controls=0&loop=1&playlist=${ytId}&modestbranding=1&rel=0&playsinline=1`}
-                  title="Ad video"
-                  className="w-full h-full object-cover"
-                  allow="autoplay; encrypted-media; picture-in-picture"
-                  allowFullScreen
-                  frameBorder={0}
-                />
-              </div>
+              <iframe
+                src={`https://www.youtube.com/embed/${ytId}?autoplay=1&mute=1&controls=0&loop=1&playlist=${ytId}&modestbranding=1&rel=0&playsinline=1`}
+                title="Ad video"
+                className="absolute inset-0 w-full h-full object-cover"
+                allow="autoplay; encrypted-media; picture-in-picture"
+                allowFullScreen
+                frameBorder={0}
+              />
             ) : (
-              <div className="w-full h-20 md:h-28 overflow-hidden">
-                <video
-                  src={driveToDirectUrl(currentAd.video)}
-                  className="w-full h-full object-cover"
-                  autoPlay
-                  muted
-                  loop
-                  playsInline
-                />
-              </div>
+              <video
+                src={driveToDirectUrl(currentAd.video)}
+                className="absolute inset-0 w-full h-full object-cover"
+                autoPlay
+                muted
+                loop
+                playsInline
+              />
             )
           ) : (
-            <div className="w-full h-20 md:h-28 overflow-hidden">
-              <img key={activeAdIdx} src={currentAd.image || '/placeholder-movie.jpg'} alt="Ad" className="w-full h-full object-cover" />
-            </div>
+            <img key={activeAdIdx} src={currentAd.image || '/placeholder-movie.jpg'} alt="Ad" className="absolute inset-0 w-full h-full object-cover" />
           )}
         </div>
       ) : (

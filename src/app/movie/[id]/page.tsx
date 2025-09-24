@@ -420,7 +420,7 @@ const MovieDetailPage = () => {
                 {/* Featured badge */}
                 {movie.isFeatured && (
                   <div className="absolute top-3 right-3">
-                    <Badge className="bg-red-500 text-white border-0">
+                    <Badge className="bg-[#176DA6] text-white border-0">
                         <Star className="w-4 h-4 mr-1 inline animate-pulse" /> Featured
                     </Badge>
                   </div>
@@ -430,7 +430,7 @@ const MovieDetailPage = () => {
 
             {/* Action Buttons */}
             <div className="mt-4 space-y-3">
-              <Button onClick={handleWatchClick} className="w-full bg-red-600 hover:bg-red-700 text-white" size="lg">
+              <Button onClick={handleWatchClick} className="w-full bg-[#176DA6] hover:bg-[#135685] text-white" size="lg">
                 <Play className="w-5 h-5 mr-2 fill-white" />
                 Watch Now
               </Button>
@@ -562,7 +562,7 @@ const MovieDetailPage = () => {
                                   {ep.duration && <div className="text-sm text-gray-600">{Math.floor(ep.duration/60)}m {ep.duration%60}s</div>}
                                 </div>
                                 <div className="flex items-center gap-2">
-                                  <Button size="sm" className="bg-red-600 text-white" onClick={async () => {
+                                  <Button size="sm" className="bg-[#176DA6] text-white" onClick={async () => {
                                     try {
                                       // Open blank window synchronously to satisfy mobile browsers
                                       const win = window.open('', '_blank')
