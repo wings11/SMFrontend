@@ -343,8 +343,8 @@ const FeaturedSkeleton = () => (
 
 export default function HomePage() {
   const [featuredMovies, setFeaturedMovies] = useState<Movie[]>([])
-  const [popularMovies, setPopularMovies] = useState<Movie[]>([])
   const [recentMovies, setRecentMovies] = useState<Movie[]>([])
+  const [tagPool, setTagPool] = useState<Movie[]>([])
   // ad banner moved to TopBanner in the global layout
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
@@ -355,24 +355,22 @@ export default function HomePage() {
         setLoading(true)
         console.log('Fetching data from API...')
 
-        const [featured, popular, recent] = await Promise.all([
+        const [featured, recent, pool] = await Promise.all([
           moviesAPI.getFeatured(8),
-          moviesAPI.getPopular(12),
-          moviesAPI.getMovies({ limit: 12, sortBy: 'lastEpisodeAt', sortOrder: 'desc' })
+          moviesAPI.getMovies({ limit: 12, sortBy: 'lastEpisodeAt', sortOrder: 'desc' }),
+          moviesAPI.getMovies({ limit: 60, sortBy: 'createdAt', sortOrder: 'desc' })
         ])
 
         console.log('Featured movies response:', featured)
-        console.log('Popular movies response:', popular)
         console.log('Recent movies response:', recent)
 
-        setFeaturedMovies(featured.data || [])
-        setPopularMovies(popular.data || [])
-        setRecentMovies(recent.data || [])
+  setFeaturedMovies(featured.data || [])
+  setRecentMovies(recent.data || [])
+  setTagPool(pool.data || [])
       } catch (error) {
         console.error('Error fetching data:', error)
         // Set empty arrays on error to avoid undefined issues
         setFeaturedMovies([])
-        setPopularMovies([])
         setRecentMovies([])
       } finally {
         setLoading(false)
@@ -531,42 +529,7 @@ export default function HomePage() {
           </section>
         )}
 
-        {/* Trending Now */}
-        <section>
-          <div className="flex items-center justify-between mb-6">
-            <div>
-              <h2 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white mb-2">
-                <TrendingUp className="w-5 h-5 mr-2 inline animate-pulse" />Trending Now
-              </h2>
-              <p className="text-gray-600 dark:text-gray-400">
-                Most watched this week
-              </p>
-            </div>
-            <Link href="/movies?sortBy=clickCount&sortOrder=desc">
-              <Button variant="outline" className="hidden sm:flex">
-                View All
-                <ChevronRight className="w-4 h-4 ml-2" />
-              </Button>
-            </Link>
-          </div>
-          
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
-            {loading ? (
-              Array.from({ length: 12 }).map((_, i) => <LoadingSkeleton key={i} />)
-            ) : (
-              popularMovies.map((movie) => <MovieCard key={movie._id} movie={movie} />)
-            )}
-          </div>
-          
-          <div className="text-center mt-6 sm:hidden">
-            <Link href="/movies?sortBy=clickCount&sortOrder=desc">
-              <Button variant="outline">
-                View All Trending
-                <ChevronRight className="w-4 h-4 ml-2" />
-              </Button>
-            </Link>
-          </div>
-        </section>
+        {/* Trending Now removed per request */}
 
         {/* Recently Added */}
         <section>
@@ -604,6 +567,39 @@ export default function HomePage() {
             </Link>
           </div>
         </section>
+      </div>
+
+      {/* Tag-based sections under Recently Added */}
+      <div className="container mx-auto px-4 py-8 space-y-12">
+        {(() => {
+          const TAGS = ['movie', 'korea drama', 'BL', 'thai series', 'western series', 'variety show']
+          return TAGS.map((tag) => {
+            const items = tagPool.filter((m) => Array.isArray(m.tags) && m.tags.includes(tag)).slice(0, 6)
+            if (items.length === 0) return null
+            return (
+              <section key={tag}>
+                <div className="flex items-center justify-between mb-6">
+                  <div>
+                    <h2 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white mb-2">{tag.charAt(0).toUpperCase() + tag.slice(1)}</h2>
+                    <p className="text-gray-600 dark:text-gray-400">{`Latest ${tag} content`}</p>
+                  </div>
+                  <Link href={`/movies?search=${encodeURIComponent(tag)}`}>
+                    <Button variant="outline" className="hidden sm:flex">
+                      View All
+                      <ChevronRight className="w-4 h-4 ml-2" />
+                    </Button>
+                  </Link>
+                </div>
+
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+                  {items.map((movie) => (
+                    <MovieCard key={movie._id} movie={movie} />
+                  ))}
+                </div>
+              </section>
+            )
+          })
+        })()}
       </div>
       
       {/* Scroll to Top Button */}

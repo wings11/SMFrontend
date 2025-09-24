@@ -9,6 +9,12 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuCheckboxItem,
+} from '@/components/ui/dropdown-menu'
 import { Switch } from '@/components/ui/switch'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
@@ -71,6 +77,7 @@ interface MovieFormData {
   seasons?: number
   tags: string[]
   isFeatured: boolean
+  downloads?: Partial<Record<'240' | '360' | '720' | '1080', Array<{ source?: string; url?: string }>>>
   episodes?: EpisodeInput[]
 }
 
@@ -84,6 +91,25 @@ interface EpisodeInput {
   thumbnailUrl?: string
   duration?: number
   clickCount?: number
+  downloads?: Partial<Record<'240' | '360' | '720' | '1080', Array<{ source?: string; url?: string }>>>
+}
+
+// Default downloads shape helper (module scope so admin handlers can use it)
+const DEFAULT_DOWNLOADS: Partial<Record<'240' | '360' | '720' | '1080', Array<{ source?: string; url?: string }>>> = { '240': [{ source: '', url: '' }], '360': [{ source: '', url: '' }], '720': [{ source: '', url: '' }], '1080': [{ source: '', url: '' }] }
+
+// helper to clean downloads arrays by removing entries with empty url (module scope)
+const cleanDownloads = (d?: Partial<Record<string, Array<{ source?: string; url?: string }>>>) => {
+  if (!d) return undefined
+  const out: Record<string, Array<{ source?: string; url?: string }>> = {}
+  Object.entries(d).forEach(([k, arr]) => {
+    if (Array.isArray(arr)) {
+      const cleaned = arr
+        .map(it => ({ source: it?.source || '', url: typeof it?.url === 'string' ? it.url.trim() : '' }))
+        .filter(it => it.url && it.url !== '')
+      if (cleaned.length > 0) out[k] = cleaned
+    }
+  })
+  return Object.keys(out).length > 0 ? out : undefined
 }
 
 const MovieForm = ({ 
@@ -99,7 +125,7 @@ const MovieForm = ({
   onSubmit: (data: MovieFormData) => Promise<Record<string, unknown> | void>
   isLoading: boolean
 }) => {
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<MovieFormData>({
     title: '',
     type: 'movie' as 'movie' | 'series',
     year: new Date().getFullYear(),
@@ -115,11 +141,12 @@ const MovieForm = ({
     metacriticRating: 0,
     seasons: 1,
     tags: [] as string[],
-    isFeatured: false
+    isFeatured: false,
+    downloads: DEFAULT_DOWNLOADS
   })
 
   const [episodes, setEpisodes] = useState<EpisodeInput[]>([])
-  const [newEpisode, setNewEpisode] = useState<{ season: number; episodeNumber: number; title: string; watchUrl: string; thumbnailUrl: string; duration?: number | string; isPublished: boolean }>({ season: 1, episodeNumber: 1, title: '', watchUrl: '', thumbnailUrl: '', duration: undefined, isPublished: true })
+  const [newEpisode, setNewEpisode] = useState<{ season: number; episodeNumber: number; title: string; watchUrl: string; thumbnailUrl: string; duration?: number | string; isPublished: boolean; downloads?: Partial<Record<'240'|'360'|'720'|'1080', Array<{source?:string;url?:string}>>> }>({ season: 1, episodeNumber: 1, title: '', watchUrl: '', thumbnailUrl: '', duration: undefined, isPublished: true, downloads: DEFAULT_DOWNLOADS })
 
   const [fetchUrl, setFetchUrl] = useState('')
   const [isFetching, setIsFetching] = useState(false)
@@ -131,7 +158,8 @@ const MovieForm = ({
     if (!isOpen) return
 
     if (movie) {
-      setFormData({
+  // Do not auto-set tags from fetched data anymore; admin must choose tags manually
+  setFormData({
         title: movie.title,
         type: movie.type,
         year: movie.year || new Date().getFullYear(),
@@ -146,8 +174,9 @@ const MovieForm = ({
         rottenTomatoesRating: movie.rottenTomatoesRating || 0,
         metacriticRating: movie.metacriticRating || 0,
         seasons: movie.seasons || 1,
-        tags: movie.tags || [],
-        isFeatured: !!movie.isFeatured
+    tags: movie.tags || [],
+    isFeatured: !!movie.isFeatured,
+  downloads: (movie as unknown as { downloads?: Partial<Record<string, Array<{ source?: string; url?: string }>>> }).downloads || DEFAULT_DOWNLOADS
       })
       // Load episodes for series (keep existing episodes state if already loaded)
       setFetchUrl('')
@@ -170,7 +199,8 @@ const MovieForm = ({
         metacriticRating: 0,
         seasons: 1,
         tags: [],
-        isFeatured: false
+        isFeatured: false,
+        downloads: DEFAULT_DOWNLOADS
       })
       setFetchUrl('')
       setFetchSuccess(false)
@@ -234,7 +264,8 @@ const MovieForm = ({
           rottenTomatoesRating: movieData.rottenTomatoesRating || 0,
           metacriticRating: movieData.metacriticRating || 0,
           seasons: movieData.seasons || 1,
-          tags: movieData.tags
+          // keep tags untouched so admin will select from fixed list
+          tags: []
         }))
         console.log('Updated form data with trailer:', movieData.trailerUrl); // Debug log
         setFetchSuccess(true)
@@ -252,9 +283,17 @@ const MovieForm = ({
     setFormData(prev => ({ ...prev, genre: genres }))
   }
 
-  const handleTagsChange = (tagsString: string) => {
-    const tags = tagsString.split(',').map(t => t.trim()).filter(t => t)
-    setFormData(prev => ({ ...prev, tags }))
+  // Fixed tag options for admin selection
+  const TAG_OPTIONS = ['movie', 'korea drama', 'BL', 'thai series', 'western series', 'variety show'] as const
+
+  const handleToggleTag = (tag: string) => {
+    setFormData(prev => {
+      const exists = prev.tags.includes(tag)
+      let nextTags = exists ? prev.tags.filter(t => t !== tag) : [...prev.tags, tag]
+      // enforce max 5 tags
+      if (nextTags.length > 5) nextTags = nextTags.slice(0, 5)
+      return { ...prev, tags: nextTags }
+    })
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -290,7 +329,7 @@ const MovieForm = ({
       alert('Please provide an episode number and a watch URL')
       return
     }
-  setEpisodes(prev => [...prev, { ...newEpisode, _id: `tmp-${Date.now()}`, episodeNumber: epNum, duration: typeof newEpisode.duration === 'string' ? (newEpisode.duration ? Number(newEpisode.duration) : undefined) : newEpisode.duration } as EpisodeInput])
+  setEpisodes(prev => [...prev, { ...newEpisode, _id: `tmp-${Date.now()}`, episodeNumber: epNum, duration: typeof newEpisode.duration === 'string' ? (newEpisode.duration ? Number(newEpisode.duration) : undefined) : newEpisode.duration, downloads: cleanDownloads(newEpisode.downloads as Partial<Record<'240'|'360'|'720'|'1080', Array<{ source?: string; url?: string }>>>) } as EpisodeInput])
   setNewEpisode({ season: Number(newEpisode.season) || 1, episodeNumber: epNum + 1, title: '', watchUrl: '', thumbnailUrl: '', duration: undefined, isPublished: true })
   }
 
@@ -300,7 +339,7 @@ const MovieForm = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+  <DialogContent className="w-full max-w-full sm:max-w-4xl max-h-[90vh] overflow-y-auto sm:rounded-lg">
         <DialogHeader>
           <DialogTitle>{movie ? 'Edit' : 'Add New'} {formData.type === 'movie' ? 'Movie' : 'Series'}</DialogTitle>
           <DialogDescription>
@@ -347,7 +386,7 @@ const MovieForm = ({
             />
           </div>
 
-          <div className="grid grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
             <div>
               <Label htmlFor="type">Type *</Label>
               <Select value={formData.type} onValueChange={(value: 'movie' | 'series') => setFormData(prev => ({ ...prev, type: value }))}>
@@ -459,6 +498,51 @@ const MovieForm = ({
                 onChange={(e) => setFormData(prev => ({ ...prev, backdropUrl: e.target.value }))}
               />
             </div>
+            
+            {/* Download links per resolution */}
+            <div className="col-span-3 mt-2">
+              <h5 className="text-sm font-medium">Download Links</h5>
+              <p className="text-xs text-gray-500">Add optional download sources for common resolutions (240, 360, 720, 1080). You can add multiple links per resolution.</p>
+              <div className="grid grid-cols-1 gap-3 mt-3">
+                {(['240','360','720','1080'] as const).map((res) => (
+                  <div key={res} className="border rounded p-3">
+                    <div className="flex items-center justify-between">
+                      <div className="text-sm font-medium">{res}p</div>
+                      <Button size="sm" type="button" onClick={() => {
+                        setFormData(prev => ({ ...prev, downloads: { ...(prev.downloads || {}), [res]: [ ...(prev.downloads?.[res] || []), { source: '', url: '' } ] } }))
+                      }}>Add link</Button>
+                    </div>
+                    <div className="mt-2 space-y-2">
+                      {(formData.downloads?.[res] || []).map((item, idx) => (
+                        <div key={idx} className="grid grid-cols-12 gap-2 items-start">
+                          <div className="col-span-5">
+                            <Input placeholder="Source (Mega, Google Drive, etc.)" value={item.source || ''} onChange={(e) => {
+                              const next = (formData.downloads?.[res] || []).slice()
+                              next[idx] = { ...(next[idx] || {}), source: e.target.value }
+                              setFormData(prev => ({ ...prev, downloads: { ...(prev.downloads || {}), [res]: next } }))
+                            }} />
+                          </div>
+                          <div className="col-span-6">
+                            <Input placeholder="https://..." value={item.url || ''} onChange={(e) => {
+                              const next = (formData.downloads?.[res] || []).slice()
+                              next[idx] = { ...(next[idx] || {}), url: e.target.value }
+                              setFormData(prev => ({ ...prev, downloads: { ...(prev.downloads || {}), [res]: next } }))
+                            }} />
+                          </div>
+                          <div className="col-span-1">
+                            <Button size="sm" variant="destructive" type="button" onClick={() => {
+                              const next = (formData.downloads?.[res] || []).slice()
+                              next.splice(idx, 1)
+                              setFormData(prev => ({ ...prev, downloads: { ...(prev.downloads || {}), [res]: next } }))
+                            }}>Remove</Button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
 
           <div>
@@ -520,13 +604,28 @@ const MovieForm = ({
           </div>
 
           <div>
-            <Label htmlFor="tags">Tags (comma-separated)</Label>
-            <Input
-              id="tags"
-              placeholder="superhero, action, marvel"
-              value={formData.tags.join(', ')}
-              onChange={(e) => { handleTagsChange(e.target.value); console.log('tags input change', e.target.value); }}
-            />
+            <Label htmlFor="tags">Tags (choose up to 5)</Label>
+            <div className="mt-2">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button type="button" className="w-full text-left">
+                    {formData.tags.length === 0 ? 'Select tags' : formData.tags.join(', ')}
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="w-56">
+                  {TAG_OPTIONS.map((t) => (
+                    <DropdownMenuCheckboxItem
+                      key={t}
+                      checked={formData.tags.includes(t)}
+                      onCheckedChange={() => handleToggleTag(t)}
+                    >
+                      {t}
+                    </DropdownMenuCheckboxItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+              <p className="text-sm text-gray-500 mt-1">Selected: {formData.tags.length} / 5</p>
+            </div>
           </div>
 
           {/* Episodes management - visible for series */}
@@ -564,6 +663,46 @@ const MovieForm = ({
                 <div className="col-span-3">
                   <Label>Watch URL</Label>
                   <Input value={newEpisode.watchUrl} onChange={(e) => setNewEpisode(prev => ({ ...prev, watchUrl: e.target.value }))} placeholder="https://t.me/yourchannel/123 or https://.../video.mp4" />
+                </div>
+                <div className="col-span-3">
+                  <Label>Episode Download Links (optional)</Label>
+                  <div className="grid grid-cols-2 gap-2 mt-2">
+                    {(['240','360','720','1080'] as const).map((res) => (
+                      <div key={res} className="border rounded p-2">
+                        <div className="flex items-center justify-between">
+                          <div className="text-sm font-medium">{res}p</div>
+                          <Button size="sm" type="button" onClick={() => setNewEpisode(prev => ({ ...prev, downloads: { ...(prev.downloads || {}), [res]: [ ...(prev.downloads?.[res] || []), { source: '', url: '' } ] } }))}>Add link</Button>
+                        </div>
+                        <div className="mt-2 space-y-2">
+                          {((newEpisode.downloads?.[res] || []) as Array<{ source?: string; url?: string }>).map((it, idx) => (
+                            <div key={idx} className="grid grid-cols-12 gap-2 items-start">
+                              <div className="col-span-5">
+                                <Input placeholder="Source" value={it.source || ''} onChange={(e) => {
+                                  const next = (newEpisode.downloads?.[res] || []).slice()
+                                  next[idx] = { ...(next[idx] || {}), source: e.target.value }
+                                  setNewEpisode(prev => ({ ...prev, downloads: { ...(prev.downloads || {}), [res]: next } }))
+                                }} />
+                              </div>
+                              <div className="col-span-6">
+                                <Input placeholder="https://..." value={it.url || ''} onChange={(e) => {
+                                  const next = (newEpisode.downloads?.[res] || []).slice()
+                                  next[idx] = { ...(next[idx] || {}), url: e.target.value }
+                                  setNewEpisode(prev => ({ ...prev, downloads: { ...(prev.downloads || {}), [res]: next } }))
+                                }} />
+                              </div>
+                              <div className="col-span-1">
+                                <Button size="sm" variant="destructive" type="button" onClick={() => {
+                                  const next = (newEpisode.downloads?.[res] || []).slice()
+                                  next.splice(idx, 1)
+                                  setNewEpisode(prev => ({ ...prev, downloads: { ...(prev.downloads || {}), [res]: next } }))
+                                }}>Remove</Button>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 </div>
                 <div className="flex items-center gap-2">
                   <Button type="button" onClick={handleAddEpisode}><Plus className="w-4 h-4 mr-2" />Add Episode</Button>
@@ -646,8 +785,8 @@ export default function AdminDashboard() {
     try {
       setFormLoading(true)
       
-      // Only filter out empty URL fields, keep other empty strings
-      const cleanedData: Record<string, unknown> = { ...movieData }
+  // Only filter out empty URL fields, keep other empty strings
+  const cleanedData: Record<string, unknown> = { ...movieData }
       
   // Remove empty URL fields specifically (narrow to string first)
   const cd = cleanedData as Record<string, unknown>
@@ -658,6 +797,10 @@ export default function AdminDashboard() {
   if (!trailerUrl || !trailerUrl.trim()) delete cd.trailerUrl
   if (!backdropUrl || !backdropUrl.trim()) delete cd.backdropUrl
       
+      // Attach cleaned downloads if present
+  const cdDownloads = cleanDownloads((cleanedData as unknown as { downloads?: Partial<Record<string, Array<{ source?: string; url?: string }>>> }).downloads)
+  if (cdDownloads) (cleanedData as unknown as { downloads?: unknown }).downloads = cdDownloads
+
       // Normalize episodes: send only needed fields (season, episodeNumber, watchUrl, isPublished)
       if (Array.isArray((cleanedData as unknown as Record<string, unknown>).episodes)) {
         const eps = (cleanedData as unknown as Record<string, unknown>).episodes as unknown as EpisodeInput[]
@@ -667,6 +810,8 @@ export default function AdminDashboard() {
             episodeNumber: e.episodeNumber ? Number(e.episodeNumber) : null,
             watchUrl: e.watchUrl ? String(e.watchUrl).trim() : '',
             isPublished: e.isPublished !== undefined ? !!e.isPublished : true
+          ,
+            downloads: cleanDownloads((e as unknown as { downloads?: Partial<Record<string, Array<{ source?: string; url?: string }>>> }).downloads)
           }))
           .filter((ep) => (ep as EpisodeInput).episodeNumber && (ep as EpisodeInput).watchUrl)
       }
@@ -709,6 +854,9 @@ export default function AdminDashboard() {
         })
       )
 
+  const cdDownloads = cleanDownloads((cleanedData as unknown as { downloads?: Partial<Record<string, Array<{ source?: string; url?: string }>>> }).downloads)
+  if (cdDownloads) (cleanedData as unknown as { downloads?: unknown }).downloads = cdDownloads
+
       if (Array.isArray((cleanedData as unknown as Record<string, unknown>).episodes)) {
         const eps = (cleanedData as unknown as Record<string, unknown>).episodes as unknown as EpisodeInput[]
         (cleanedData as unknown as Record<string, unknown>).episodes = eps
@@ -718,6 +866,8 @@ export default function AdminDashboard() {
             episodeNumber: e.episodeNumber ? Number(e.episodeNumber) : null,
             watchUrl: e.watchUrl ? String(e.watchUrl).trim() : '',
             isPublished: e.isPublished !== undefined ? !!e.isPublished : true
+          ,
+            downloads: cleanDownloads((e as unknown as { downloads?: Partial<Record<string, Array<{ source?: string; url?: string }>>> }).downloads)
           }))
           .filter((ep) => (ep as EpisodeInput).episodeNumber && (ep as EpisodeInput).watchUrl)
       }
@@ -901,8 +1051,8 @@ export default function AdminDashboard() {
               {loading ? (
                 Array.from({ length: 5 }).map((_, i) => (
                   <div key={i} className="border rounded-lg p-4">
-                    <div className="flex justify-between items-start">
-                      <div className="flex-1">
+            <div className="flex flex-col sm:flex-row justify-between items-start">
+              <div className="flex-1 min-w-0">
                         <Skeleton className="h-6 w-64 mb-2" />
                         <Skeleton className="h-4 w-96 mb-2" />
                         <div className="flex gap-2">
@@ -922,10 +1072,10 @@ export default function AdminDashboard() {
               ) : (
                 filteredMovies.map((movie) => (
                   <div key={movie._id} className={`border rounded-lg p-4 hover:shadow-md transition-shadow ${!movie.isActive ? 'opacity-60 bg-gray-50 dark:bg-gray-800' : ''}`}>
-                    <div className="flex justify-between items-start">
-                      <div className="flex-1">
+                    <div className="flex flex-col sm:flex-row sm:justify-between items-start gap-3">
+                      <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-2">
-                          <h3 className={`text-lg font-semibold ${!movie.isActive ? 'line-through text-gray-500' : ''}`}>{movie.title}</h3>
+                          <h3 className={`text-lg font-semibold truncate ${!movie.isActive ? 'line-through text-gray-500' : ''}`} title={movie.title}>{movie.title}</h3>
                           <Badge variant={movie.type === 'movie' ? 'default' : 'secondary'}>
                             {movie.type === 'movie' ? <Film className="w-3 h-3 mr-1" /> : <Tv className="w-3 h-3 mr-1" />}
                             {movie.type}
@@ -938,7 +1088,7 @@ export default function AdminDashboard() {
                           )}
                           {!movie.isActive && <Badge variant="outline">Deleted</Badge>}
                         </div>
-                        <p className="text-gray-600 dark:text-gray-400 text-sm mb-2 line-clamp-2">
+                        <p className="text-gray-600 dark:text-gray-400 text-sm mb-2 line-clamp-2 min-w-0">
                           {movie.description}
                         </p>
                         <div className="flex items-center gap-4 text-sm text-gray-500">
@@ -971,7 +1121,9 @@ export default function AdminDashboard() {
                           </span>
                         </div>
                       </div>
-                      <div className="flex gap-2">
+                      <div className="w-full sm:w-auto mt-0 sm:mt-0 sm:ml-4 flex-shrink-0">
+                        {/* On small screens place buttons in a row below the content; on larger screens keep them inline */}
+                        <div className="flex gap-2">
                         <Button
                           size="sm"
                           variant="outline"
@@ -993,6 +1145,7 @@ export default function AdminDashboard() {
                         >
                           <Trash2 className="w-4 h-4" />
                         </Button>
+                        </div>
                       </div>
                     </div>
                   </div>

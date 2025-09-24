@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Skeleton } from '@/components/ui/skeleton'
-import { ExpandableText } from '@/components/ui/expandable-text'
+// Description rendered fully in movie detail; ExpandableText not used here
 import { ScrollToTop } from '@/components/ui/scroll-to-top'
 import { 
   Star, 
@@ -101,6 +101,7 @@ interface Episode {
   duration?: number
   watchUrl?: string
   clickCount?: number
+  downloads?: Partial<Record<'240'|'360'|'720'|'1080', Array<{ source?: string; url?: string }>>>
 }
 
 const MovieDetailPage = () => {
@@ -541,7 +542,7 @@ const MovieDetailPage = () => {
               {movie.type === 'series' && (
                 <Card>
                   <CardHeader>
-                    <h2 className="text-xl font-semibold">Episodes</h2>
+                    <h2 className="text-xl font-semibold">Telegram Links</h2>
                   </CardHeader>
                   <CardContent>
                     {episodesLoading ? (
@@ -593,6 +594,32 @@ const MovieDetailPage = () => {
                                   </Button>
                                 </div>
                               </div>
+
+                              {/* Episode-level downloads (admin-provided) */}
+                              {(() => {
+                                const epDownloads = (ep as unknown as { downloads?: Partial<Record<'240'|'360'|'720'|'1080', Array<{ source?: string; url?: string }>>> }).downloads
+                                if (!epDownloads || Object.keys(epDownloads).length === 0) return null
+                                return (
+                                  <div className="mt-2 ml-2">
+                                    {(['240','360','720','1080'] as const).map(res => {
+                                      const arr = (epDownloads || {})[res] as Array<{ source?: string; url?: string }> | undefined
+                                      if (!arr || !Array.isArray(arr) || arr.length === 0) return null
+                                      return (
+                                        <div key={res} className="mb-2">
+                                          <div className="text-sm font-medium">{res}p</div>
+                                          <div className="flex flex-col gap-1">
+                                            {arr.map((it, idx) => (
+                                              <a key={idx} href={it.url || '#'} target="_blank" rel="noreferrer" className="text-blue-600 dark:text-blue-400 underline text-sm">
+                                                {it.source ? `${it.source} — ${it.url}` : it.url}
+                                              </a>
+                                            ))}
+                                          </div>
+                                        </div>
+                                      )
+                                    })}
+                                  </div>
+                                )
+                              })()}
                             </div>
                           </div>
                         ))}
@@ -602,17 +629,46 @@ const MovieDetailPage = () => {
                 </Card>
               )}
 
+            {/* Downloads section (admin-provided links) */}
+            {(() => {
+              const movieDownloads = (movie as unknown as { downloads?: Partial<Record<'240'|'360'|'720'|'1080', Array<{ source?: string; url?: string }>>> }).downloads
+              if (!movieDownloads || Object.keys(movieDownloads).length === 0) return null
+              return (
+                <Card>
+                <CardHeader>
+                  <h2 className="text-xl font-semibold">Downloads</h2>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    {(['240','360','720','1080'] as const).map((res) => {
+                      const arr = (movieDownloads || {})[res] as Array<{ source?: string; url?: string }> | undefined
+                      if (!arr || !Array.isArray(arr) || arr.length === 0) return null
+                      return (
+                        <div key={res}>
+                          <div className="font-medium mb-2">{res}p</div>
+                          <div className="flex flex-col gap-2">
+                            {arr.map((it, idx) => (
+                              <a key={idx} href={it.url || '#'} target="_blank" rel="noreferrer" className="text-blue-600 dark:text-blue-400 underline">
+                                {it.source ? `${it.source} — ${it.url}` : it.url}
+                              </a>
+                            ))}
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                </CardContent>
+                </Card>
+              )
+            })()}
+
             {/* Description */}
             <Card>
               <CardHeader>
                 <h2 className="text-xl font-semibold">Overview</h2>
               </CardHeader>
               <CardContent>
-                <ExpandableText
-                  text={movie.description}
-                  maxLines={4}
-                  className="text-gray-700 dark:text-gray-300 leading-relaxed"
-                />
+                <p className="text-gray-700 dark:text-gray-300 leading-relaxed whitespace-pre-line">{movie.description}</p>
               </CardContent>
             </Card>
 

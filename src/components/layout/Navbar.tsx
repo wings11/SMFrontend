@@ -31,6 +31,7 @@ const Navbar = () => {
   const publicNavItems = [
     { href: '/', label: 'Home', icon: Home },
     { href: '/movies', label: 'Movies', icon: Film },
+    { href: '/disclaimers', label: 'Disclaimers', icon: Home },
   ];
 
   const adminNavItems = [

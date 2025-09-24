@@ -36,6 +36,9 @@ export default function FloatingNav() {
                 <Link href="/advertise" onClick={() => setOpen(false)} className="block px-3 py-2 rounded hover:bg-gray-100 dark:hover:bg-gray-800">Advertise With Us</Link>
               </li>
               <li>
+                <Link href="/disclaimers" onClick={() => setOpen(false)} className="block px-3 py-2 rounded hover:bg-gray-100 dark:hover:bg-gray-800">Disclaimers</Link>
+              </li>
+              <li>
                 <Link href="/contact" onClick={() => setOpen(false)} className="block px-3 py-2 rounded hover:bg-gray-100 dark:hover:bg-gray-800">Contact Us</Link>
               </li>
             </ul>

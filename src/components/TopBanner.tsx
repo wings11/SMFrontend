@@ -68,8 +68,8 @@ export default function TopBanner() {
   return (
     <div className="sticky top-0 z-40 flex justify-center bg-black/80">
       {currentAd ? (
-        // Center a fixed-size ad container (1200x180) so the top banner does not grow on large screens
-        <div className="w-[1200px] h-[180px] relative">
+        // Center a responsive ad container (max 1200px). Reduce height on small devices so banner isn't too large on mobile.
+        <div className="w-full max-w-[1200px] h-16 sm:h-28 md:h-44 relative">
           {currentAd.video ? (
             ytId ? (
               <iframe
@@ -96,7 +96,7 @@ export default function TopBanner() {
         </div>
       ) : (
         <div className="w-full bg-black/80 flex items-center justify-center">
-          <div className="w-full max-w-4xl py-4 text-center text-white/90">Can add Ads, contact - 0xxx</div>
+          <div className="w-full max-w-[1200px] h-16 sm:h-28 md:h-44 flex items-center justify-center text-center text-white/90">Can add Ads, contact - 0xxx</div>
         </div>
       )}
     </div>
