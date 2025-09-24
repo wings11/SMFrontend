@@ -222,5 +222,4 @@ export const analyticsAPI = {
   },
 };
 
-export { API_BASE_URL };
 export default api;

@@ -1,6 +1,5 @@
 // Movie data fetching service
 import axios from 'axios';
-import { API_BASE_URL } from './api';
 
 // You'll need to get API keys for these services
 const OMDB_API_KEY = process.env.NEXT_PUBLIC_OMDB_API_KEY || '';
@@ -299,82 +298,9 @@ class MovieFetchService {
 
   // Main fetch function
   async fetchMovieDetails(url: string): Promise<MovieDetails | null> {
-    // Support asianwiki links by calling backend proxy
-    if (/asianwiki\.com/i.test(url)) {
-      try {
-        // Try the configured API base URL first, then fall back to a relative '/api/asianwiki'
-        const endpoint = `${API_BASE_URL.replace(/\/$/, '')}/asianwiki`;
-        let resp;
-        try {
-          resp = await axios.get(endpoint, { params: { url } });
-        } catch (err) {
-          try {
-            resp = await axios.get('/api/asianwiki', { params: { url } });
-          } catch (err2) {
-            // Both attempts failed — log and return null to the caller
-            console.error('AsianWiki fetch failed (primary and fallback):', err, err2);
-            return null;
-          }
-        }
-        if (resp && resp.data) {
-          const d = resp.data;
-          const movieData: MovieDetails = {
-            title: d.title || '',
-            year: d.year ? parseInt(d.year) : undefined,
-            genre: d.genre || [],
-            description: d.synopsis || d.description || '',
-            imdbRating: undefined,
-            tmdbRating: undefined,
-            rottenTomatoesRating: undefined,
-            metacriticRating: undefined,
-            type: 'movie',
-            seasons: undefined,
-            posterUrl: d.poster || d.image || d.cover || undefined,
-            poster: d.poster || d.image || d.cover || undefined,
-            trailerUrl: d.trailerUrl || undefined,
-            backdropUrl: d.backdrop || undefined,
-            tags: Array.isArray(d.cast) ? d.cast.map((c: string) => c.split(' as ')[0].trim().toLowerCase()) : []
-          };
-          // Heuristic: if synopsis mentions "episode" or cast is long, mark as series
-          if (d.cast && d.cast.length > 5) movieData.type = 'series';
-          return movieData;
-        }
-        return null;
-      } catch (errAny) {
-        const e: unknown = errAny;
-        // Propagate more useful error info for debug (server may return HTML error pages)
-        // Extract a useful message safely
-        let msg = '';
-        try {
-          if (typeof e === 'object' && e !== null) {
-            // JSON.stringify will gracefully handle many error shapes
-            msg = JSON.stringify(e, Object.getOwnPropertyNames(e)).slice(0, 500);
-          } else {
-            msg = String(e);
-          }
-        } catch {
-          msg = String(e);
-        }
-
-        console.error('Error fetching AsianWiki data:', msg);
-
-        // Try to extract server response snippet if present (defensive JSON stringify)
-        try {
-          if (typeof e === 'object' && e !== null) {
-            const raw = JSON.stringify(e, Object.getOwnPropertyNames(e)).slice(0, 1000);
-            if (raw && raw.length) console.error('Server error payload snippet:', raw);
-          }
-        } catch {
-          // ignore stringify errors
-        }
-
-        return null;
-      }
-    }
-
     const extracted = this.extractMovieId(url);
     if (!extracted) {
-      throw new Error('Invalid URL. Please provide a valid IMDb, TMDB, or AsianWiki URL.');
+      throw new Error('Invalid URL. Please provide a valid IMDb or TMDB URL.');
     }
 
     let movieData: MovieDetails | null = null;
