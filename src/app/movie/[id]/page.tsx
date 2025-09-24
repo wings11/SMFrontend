@@ -412,7 +412,7 @@ const MovieDetailPage = () => {
                 {movie.isFeatured && (
                   <div className="absolute top-3 right-3">
                     <Badge className="bg-red-500 text-white border-0">
-                      ⭐ Featured
+                        <Star className="w-4 h-4 mr-1 inline animate-pulse" /> Featured
                     </Badge>
                   </div>
                 )}

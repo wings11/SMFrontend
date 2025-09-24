@@ -9,7 +9,7 @@ import { Skeleton } from '@/components/ui/skeleton'
 // Carousel removed: featured layout now uses grouped rows of 3
 import { ExpandableText } from '@/components/ui/expandable-text'
 import { ScrollToTop } from '@/components/ui/scroll-to-top'
-import { Star, Calendar, Clock, Play, TrendingUp, Search, Film, Tv, ChevronRight } from 'lucide-react'
+import { Star, Calendar, Clock, Play, TrendingUp, Search, Film, Tv, ChevronRight, Plus } from 'lucide-react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { moviesAPI } from '@/lib/api'
@@ -427,7 +427,7 @@ export default function HomePage() {
             <section className="my-6">
               <div className="flex items-center justify-between mb-3">
                 <div>
-                  <h2 className="text-xl font-bold text-white">🎯 Featured</h2>
+                  <h2 className="text-xl font-bold text-white"><Star className="w-5 h-5 mr-2 inline animate-bounce" />Featured</h2>
                   <p className="text-sm text-white/80">Top picks for you</p>
                 </div>
                 
@@ -484,9 +484,9 @@ export default function HomePage() {
         {featuredMovies.length > 5 && (
           <section>
             <div className="flex items-center justify-between mb-6">
-              <div>
+                <div>
                 <h2 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white mb-2">
-                  ⭐ More Featured
+                  <Star className="w-5 h-5 mr-2 inline animate-pulse" />More Featured
                 </h2>
                 <p className="text-gray-600 dark:text-gray-400">
                   Editor&apos;s choice movies and series
@@ -524,7 +524,7 @@ export default function HomePage() {
           <div className="flex items-center justify-between mb-6">
             <div>
               <h2 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white mb-2">
-                🔥 Trending Now
+                <TrendingUp className="w-5 h-5 mr-2 inline animate-pulse" />Trending Now
               </h2>
               <p className="text-gray-600 dark:text-gray-400">
                 Most watched this week
@@ -561,7 +561,7 @@ export default function HomePage() {
           <div className="flex items-center justify-between mb-6">
             <div>
               <h2 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white mb-2">
-                🆕 Recently Added
+                <Plus className="w-5 h-5 mr-2 inline animate-bounce" />Recently Added
               </h2>
               <p className="text-gray-600 dark:text-gray-400">
                 Fresh content just uploaded

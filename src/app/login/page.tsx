@@ -44,27 +44,27 @@ const LoginPage = () => {
     }
   };
 
-  const handleDemoLogin = async (role: 'admin' | 'client') => {
-    const credentials = {
-      admin: { email: 'admin@translatedmovies.com', password: 'admin123456' },
-      client: { email: 'client@translatedmovies.com', password: 'client123456' },
-    };
+  // const handleDemoLogin = async (role: 'admin' | 'client') => {
+  //   const credentials = {
+  //     admin: { email: 'admin@translatedmovies.com', password: 'admin123456' },
+  //     client: { email: 'client@translatedmovies.com', password: 'client123456' },
+  //   };
 
-    setEmail(credentials[role].email);
-    setPassword(credentials[role].password);
+  //   setEmail(credentials[role].email);
+  //   setPassword(credentials[role].password);
     
-    setLoading(true);
-    setError('');
+  //   setLoading(true);
+  //   setError('');
 
-    try {
-      await login(credentials[role].email, credentials[role].password);
-    } catch (err: unknown) {
-      const error = err as { response?: { data?: { error?: string } } };
-      setError(error.response?.data?.error || 'Login failed');
-    } finally {
-      setLoading(false);
-    }
-  };
+  //   try {
+  //     await login(credentials[role].email, credentials[role].password);
+  //   } catch (err: unknown) {
+  //     const error = err as { response?: { data?: { error?: string } } };
+  //     setError(error.response?.data?.error || 'Login failed');
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // };
 
   if (isAuthenticated) {
     return null;
@@ -79,7 +79,7 @@ const LoginPage = () => {
             <Send className="h-12 w-12 text-blue-600" />
           </div>
           <h2 className="mt-6 text-3xl font-extrabold text-gray-900">
-            Sign in to Myanmar Movies
+            Sign in to SMDrama
           </h2>
           <p className="mt-2 text-sm text-gray-600">
             Access your dashboard and analytics
@@ -150,7 +150,7 @@ const LoginPage = () => {
             </form>
 
             {/* Demo Buttons */}
-            <div className="mt-6">
+            {/* <div className="mt-6">
               <div className="relative">
                 <div className="absolute inset-0 flex items-center">
                   <div className="w-full border-t border-gray-300" />
@@ -158,9 +158,9 @@ const LoginPage = () => {
                 <div className="relative flex justify-center text-sm">
                   <span className="px-2 bg-white text-gray-500">Demo Accounts</span>
                 </div>
-              </div>
+              </div> */}
 
-              <div className="mt-4 grid grid-cols-2 gap-3">
+              {/* <div className="mt-4 grid grid-cols-2 gap-3">
                 <Button
                   variant="outline"
                   onClick={() => handleDemoLogin('admin')}
@@ -177,20 +177,20 @@ const LoginPage = () => {
                 >
                   Client Demo
                 </Button>
-              </div>
+              </div> */}
 
               <div className="mt-4 text-xs text-gray-500 text-center">
                 <p>Admin: Full access to manage content and users</p>
                 <p>Client: View analytics and click data</p>
               </div>
-            </div>
+            
           </CardContent>
         </Card>
 
         {/* Footer */}
         <div className="text-center">
           <p className="text-sm text-gray-600">
-            Myanmar Movies - Translated Content Platform
+            Survival Myanmar - Translated Content Platform
           </p>
         </div>
       </div>
