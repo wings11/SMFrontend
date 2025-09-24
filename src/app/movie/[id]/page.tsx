@@ -362,7 +362,7 @@ const MovieDetailPage = () => {
       <div className="container mx-auto px-4 py-8">
         {/* Back button (if no backdrop) */}
 
-        <div className="flex items-center gap-3">
+        <Link href="/" className="flex items-center gap-3">
                             <div className="w-28 h-28 relative overflow-hidden flex items-center justify-center">
                               <Image src="/logo.png" alt="Logo" fill className="object-contain" />
                             </div>
@@ -370,7 +370,7 @@ const MovieDetailPage = () => {
                               <span className="text-lg font-semibold block">SMDrama</span>
                               
                             </div>
-                          </div>
+                          </Link>
         {!movie.backdropUrl && (
           <div className="mb-6">
             <Link href="/movies">

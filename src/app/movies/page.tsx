@@ -241,7 +241,7 @@ const MoviesPage = () => {
     
 
     <div className="container mx-auto px-4 py-8">
-      <div className="flex items-center gap-3">
+      <Link href="/" className="flex items-center gap-3">
                     <div className="w-28 h-28 relative overflow-hidden flex items-center justify-center">
                       <Image src="/logo.png" alt="Logo" fill className="object-contain" />
                     </div>
@@ -249,7 +249,7 @@ const MoviesPage = () => {
                       <span className="text-lg font-semibold block">SMDrama</span>
                       
                     </div>
-                  </div>
+                  </Link>
       <div className="mb-4">
         
       </div>
