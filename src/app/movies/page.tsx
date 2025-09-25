@@ -9,7 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 // expandable text removed for compact movies grid
 import { ScrollToTop } from '@/components/ui/scroll-to-top';
-import { Film, Star, Clock, Calendar, TrendingUp, Search, Filter, ChevronLeft, ChevronRight, Tv, Play } from 'lucide-react';
+import { Film, Star, Clock, Calendar, TrendingUp, Search, Filter, ChevronLeft, ChevronRight, Tv } from 'lucide-react';
 import Image from 'next/image'
 import { isLikelyImageUrl } from '@/lib/imageUtils'
 import Link from 'next/link';
@@ -114,31 +114,7 @@ const MoviesPage = () => {
     fetchFilterOptions();
   }, []);
 
-  const handleMovieClick = async (movieId: string) => {
-    try {
-      // Open a blank window synchronously so mobile browsers treat the navigation as user-initiated
-      const win = window.open('', '_blank')
-      const response = await moviesAPI.clickMovie(movieId);
-      if (response && response.telegramLink) {
-        if (win) {
-          win.location.href = response.telegramLink
-        } else {
-          window.location.href = response.telegramLink
-        }
-      } else {
-        if (win) win.close()
-      }
-
-      // Update the movie's click count in the local state
-      setMovies(prev => prev.map(movie => 
-        movie._id === movieId 
-          ? { ...movie, clickCount: movie.clickCount + 1 }
-          : movie
-      ));
-    } catch (error) {
-      console.error('Error clicking movie:', error);
-    }
-  };
+  // Movie list click actions are handled on the detail page; per-card "Watch Now" removed.
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -241,14 +217,7 @@ const MoviesPage = () => {
           </div>
         </div>
 
-        <div className="flex flex-col sm:flex-row gap-2 mt-4">
-          <Button 
-            className="w-full sm:flex-1 bg-[#176DA6] hover:bg-[#135685] text-white"
-            onClick={() => handleMovieClick(movie._id)}
-          >
-            <Play className="w-4 h-4 mr-2" />
-            Watch Now
-          </Button>
+        <div className="flex gap-2 mt-4">
           <Link href={`/movie/${movie._id}`}>
             <Button variant="outline" size="sm" className="w-full sm:w-auto">
               Details
