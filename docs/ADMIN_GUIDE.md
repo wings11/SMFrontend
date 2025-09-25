@@ -157,7 +157,7 @@ Q: How can I restore deleted content?
 ---
 
 ## ✅ Quick tips
-- Always click Create/Update and wait for confirmation.
+- Always click Create/Update and wait for confirmation.it add
 - Use the Fetch Data tool to speed up adding new items, but review fetched data.
 - Label download links with a source name so users know which mirror they are picking.
 - Keep tags consistent for better browsing.
