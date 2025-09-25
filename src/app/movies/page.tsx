@@ -135,7 +135,7 @@ const MoviesPage = () => {
   const MovieCard: React.FC<{ movie: Movie }> = ({ movie }) => (
     <Card className="group cursor-pointer transition-all duration-300 hover:shadow-lg hover:scale-105">
       {/* Poster */}
-      <div className="relative aspect-[2/3] bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-700 overflow-hidden">
+      <Link href={`/movie/${movie._id}`} className="relative aspect-[2/3] bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-700 overflow-hidden block">
         {movie && isLikelyImageUrl(movie.posterUrl) ? (
           <Image
             src={movie.posterUrl!}
@@ -153,7 +153,7 @@ const MoviesPage = () => {
             {movie.type === 'movie' ? 'Movie' : 'Series'}
           </Badge>
         </div>
-      </div>
+      </Link>
       <CardHeader className="pb-2">
         <div className="flex items-start justify-between">
           <div className="flex-1">
