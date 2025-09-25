@@ -77,7 +77,7 @@ interface MovieFormData {
   seasons?: number
   tags: string[]
   isFeatured: boolean
-  downloads?: Partial<Record<'240' | '360' | '720' | '1080', Array<{ source?: string; url?: string }>>>
+  downloads?: Partial<Record<'360' | '480' | '720' | '1080', Array<{ source?: string; url?: string }>>>
   episodes?: EpisodeInput[]
 }
 
@@ -91,11 +91,11 @@ interface EpisodeInput {
   thumbnailUrl?: string
   duration?: number
   clickCount?: number
-  downloads?: Partial<Record<'240' | '360' | '720' | '1080', Array<{ source?: string; url?: string }>>>
+  downloads?: Partial<Record<'360' | '480' | '720' | '1080', Array<{ source?: string; url?: string }>>>
 }
 
 // Default downloads shape helper (module scope so admin handlers can use it)
-const DEFAULT_DOWNLOADS: Partial<Record<'240' | '360' | '720' | '1080', Array<{ source?: string; url?: string }>>> = { '240': [{ source: '', url: '' }], '360': [{ source: '', url: '' }], '720': [{ source: '', url: '' }], '1080': [{ source: '', url: '' }] }
+const DEFAULT_DOWNLOADS: Partial<Record<'360' | '480' | '720' | '1080', Array<{ source?: string; url?: string }>>> = { '360': [{ source: '', url: '' }], '480': [{ source: '', url: '' }], '720': [{ source: '', url: '' }], '1080': [{ source: '', url: '' }] }
 
 // helper to clean downloads arrays by removing entries with empty url (module scope)
 const cleanDownloads = (d?: Partial<Record<string, Array<{ source?: string; url?: string }>>>) => {
@@ -146,7 +146,7 @@ const MovieForm = ({
   })
 
   const [episodes, setEpisodes] = useState<EpisodeInput[]>([])
-  const [newEpisode, setNewEpisode] = useState<{ season: number; episodeNumber: number; title: string; watchUrl: string; thumbnailUrl: string; duration?: number | string; isPublished: boolean; downloads?: Partial<Record<'240'|'360'|'720'|'1080', Array<{source?:string;url?:string}>>> }>({ season: 1, episodeNumber: 1, title: '', watchUrl: '', thumbnailUrl: '', duration: undefined, isPublished: true, downloads: DEFAULT_DOWNLOADS })
+  const [newEpisode, setNewEpisode] = useState<{ season: number; episodeNumber: number; title: string; watchUrl: string; thumbnailUrl: string; duration?: number | string; isPublished: boolean; downloads?: Partial<Record<'360'|'480'|'720'|'1080', Array<{source?:string;url?:string}>>> }>({ season: 1, episodeNumber: 1, title: '', watchUrl: '', thumbnailUrl: '', duration: undefined, isPublished: true, downloads: DEFAULT_DOWNLOADS })
 
   const [fetchUrl, setFetchUrl] = useState('')
   const [isFetching, setIsFetching] = useState(false)
@@ -329,7 +329,7 @@ const MovieForm = ({
       alert('Please provide an episode number and a watch URL')
       return
     }
-  setEpisodes(prev => [...prev, { ...newEpisode, _id: `tmp-${Date.now()}`, episodeNumber: epNum, duration: typeof newEpisode.duration === 'string' ? (newEpisode.duration ? Number(newEpisode.duration) : undefined) : newEpisode.duration, downloads: cleanDownloads(newEpisode.downloads as Partial<Record<'240'|'360'|'720'|'1080', Array<{ source?: string; url?: string }>>>) } as EpisodeInput])
+  setEpisodes(prev => [...prev, { ...newEpisode, _id: `tmp-${Date.now()}`, episodeNumber: epNum, duration: typeof newEpisode.duration === 'string' ? (newEpisode.duration ? Number(newEpisode.duration) : undefined) : newEpisode.duration, downloads: cleanDownloads(newEpisode.downloads as Partial<Record<'360'|'480'|'720'|'1080', Array<{ source?: string; url?: string }>>>) } as EpisodeInput])
   setNewEpisode({ season: Number(newEpisode.season) || 1, episodeNumber: epNum + 1, title: '', watchUrl: '', thumbnailUrl: '', duration: undefined, isPublished: true })
   }
 
@@ -502,9 +502,9 @@ const MovieForm = ({
             {/* Download links per resolution */}
             <div className="col-span-3 mt-2">
               <h5 className="text-sm font-medium">Download Links</h5>
-              <p className="text-xs text-gray-500">Add optional download sources for common resolutions (240, 360, 720, 1080). You can add multiple links per resolution.</p>
+              <p className="text-xs text-gray-500">Add optional download sources for common resolutions (360, 480, 720, 1080). You can add multiple links per resolution.</p>
               <div className="grid grid-cols-1 gap-3 mt-3">
-                {(['240','360','720','1080'] as const).map((res) => (
+                {(['360','480','720','1080'] as const).map((res) => (
                   <div key={res} className="border rounded p-3">
                     <div className="flex items-center justify-between">
                       <div className="text-sm font-medium">{res}p</div>
@@ -667,7 +667,7 @@ const MovieForm = ({
                 <div className="col-span-3">
                   <Label>Episode Download Links (optional)</Label>
                   <div className="grid grid-cols-2 gap-2 mt-2">
-                    {(['240','360','720','1080'] as const).map((res) => (
+                    {(['360','480','720','1080'] as const).map((res) => (
                       <div key={res} className="border rounded p-2">
                         <div className="flex items-center justify-between">
                           <div className="text-sm font-medium">{res}p</div>

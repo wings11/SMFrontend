@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="450" viewBox="0 0 800 450">
+  <rect width="800" height="450" fill="#f3f4f6"/>
+  <g transform="translate(24,24)">
+    <rect x="0" y="0" width="240" height="80" rx="8" fill="#e6f2ff" stroke="#cfe6ff"/>
+    <rect x="260" y="0" width="240" height="80" rx="8" fill="#fff7ed" stroke="#ffecd1"/>
+    <rect x="520" y="0" width="240" height="80" rx="8" fill="#fef6ff" stroke="#f6e6ff"/>
+
+    <rect x="0" y="110" width="760" height="48" rx="8" fill="#ffffff" stroke="#e5e7eb"/>
+    <rect x="0" y="172" width="760" height="220" rx="8" fill="#ffffff" stroke="#e5e7eb"/>
+
+    <text x="16" y="40" font-size="20" fill="#0f172a">Total Movies</text>
+    <text x="276" y="40" font-size="20" fill="#0f172a">Active</text>
+    <text x="536" y="40" font-size="20" fill="#0f172a">Total Views</text>
+
+    <text x="16" y="150" font-size="14" fill="#475569">Search / Filters / Add New content</text>
+    <text x="16" y="198" font-size="14" fill="#475569">Content list — card with title, tags, description and action buttons</text>
+  </g>
+</svg>

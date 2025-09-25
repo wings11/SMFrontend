@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="600" viewBox="0 0 800 600">
+  <rect width="800" height="600" fill="#fff"/>
+  <g transform="translate(20,20)">
+    <rect x="0" y="0" width="760" height="80" rx="8" fill="#f8fafc" stroke="#e6eef8"/>
+    <text x="16" y="40" font-size="18" fill="#0f172a">Add / Edit Content Form</text>
+
+    <rect x="0" y="110" width="360" height="40" rx="6" fill="#fff" stroke="#e5e7eb"/>
+    <rect x="388" y="110" width="372" height="40" rx="6" fill="#fff" stroke="#e5e7eb"/>
+
+    <rect x="0" y="168" width="760" height="120" rx="6" fill="#fff" stroke="#e5e7eb"/>
+    <text x="16" y="200" font-size="14" fill="#374151">Title, Type, Year, Genres, Tags, Telegram Link</text>
+
+    <rect x="0" y="300" width="760" height="160" rx="6" fill="#fff" stroke="#e5e7eb"/>
+    <text x="16" y="330" font-size="14" fill="#374151">Downloads: add per-resolution links</text>
+    <text x="16" y="357" font-size="14" fill="#374151">Episodes: add season/episode/watchUrl and episode downloads</text>
+
+  </g>
+</svg>

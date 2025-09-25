@@ -101,7 +101,7 @@ interface Episode {
   duration?: number
   watchUrl?: string
   clickCount?: number
-  downloads?: Partial<Record<'240'|'360'|'720'|'1080', Array<{ source?: string; url?: string }>>>
+  downloads?: Partial<Record<'360'|'480'|'720'|'1080', Array<{ source?: string; url?: string }>>>
 }
 
 const MovieDetailPage = () => {
@@ -597,11 +597,11 @@ const MovieDetailPage = () => {
 
                               {/* Episode-level downloads (admin-provided) */}
                               {(() => {
-                                const epDownloads = (ep as unknown as { downloads?: Partial<Record<'240'|'360'|'720'|'1080', Array<{ source?: string; url?: string }>>> }).downloads
+                                const epDownloads = (ep as unknown as { downloads?: Partial<Record<'360'|'480'|'720'|'1080', Array<{ source?: string; url?: string }>>> }).downloads
                                 if (!epDownloads || Object.keys(epDownloads).length === 0) return null
                                 return (
                                   <div className="mt-2 ml-2">
-                                    {(['240','360','720','1080'] as const).map(res => {
+                                    {(['360','480','720','1080'] as const).map(res => {
                                       const arr = (epDownloads || {})[res] as Array<{ source?: string; url?: string }> | undefined
                                       if (!arr || !Array.isArray(arr) || arr.length === 0) return null
                                       return (
@@ -631,7 +631,7 @@ const MovieDetailPage = () => {
 
             {/* Downloads section (admin-provided links) */}
             {(() => {
-              const movieDownloads = (movie as unknown as { downloads?: Partial<Record<'240'|'360'|'720'|'1080', Array<{ source?: string; url?: string }>>> }).downloads
+              const movieDownloads = (movie as unknown as { downloads?: Partial<Record<'360'|'480'|'720'|'1080', Array<{ source?: string; url?: string }>>> }).downloads
               if (!movieDownloads || Object.keys(movieDownloads).length === 0) return null
               return (
                 <Card>
@@ -640,7 +640,7 @@ const MovieDetailPage = () => {
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-3">
-                    {(['240','360','720','1080'] as const).map((res) => {
+                    {(['360','480','720','1080'] as const).map((res) => {
                       const arr = (movieDownloads || {})[res] as Array<{ source?: string; url?: string }> | undefined
                       if (!arr || !Array.isArray(arr) || arr.length === 0) return null
                       return (
