@@ -148,6 +148,11 @@ export const adminAPI = {
     const response = await api.delete(`/admin/movies/${id}`);
     return response.data;
   },
+
+  deleteEpisode: async (id: string) => {
+    const response = await api.delete(`/episodes/${id}`);
+    return response.data;
+  },
   
   toggleMovieFeatured: async (id: string) => {
     const response = await api.put(`/admin/movies/${id}/feature`);

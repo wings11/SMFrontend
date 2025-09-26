@@ -138,10 +138,7 @@ const MovieCard = ({ movie, featured = false }: { movie: Movie; featured?: boole
                     {movie.duration}
                   </div>
                 )}
-                <div className="flex items-center gap-1 text-gray-600 dark:text-gray-400">
-                  <TrendingUp className="w-4 h-4" />
-                  {movie.clickCount.toLocaleString()} views
-                </div>
+                {/* Views removed from public UI */}
               </div>
               
               {/* Description */}
@@ -432,35 +429,38 @@ export default function HomePage() {
             </form>
           </div>
 
-          {/* New mobile-first Featured strip: horizontal snap + decorative spacing */}
+          {/* Featured content - render with the same grid sizing as Recently Added */}
           {featuredMovies.length > 0 && (
             <section className="my-6">
               <div className="flex items-center justify-between mb-3">
                 <div>
-                  <h2 className="text-xl font-bold text-white"><Star className="w-5 h-5 mr-2 inline animate-bounce" />Featured</h2>
+                  <h2 className="text-2xl md:text-3xl font-bold text-white"><Star className="w-5 h-5 mr-2 inline animate-bounce" />Featured</h2>
                   <p className="text-sm text-white/80">Top picks for you</p>
                 </div>
-                
+                <Link href="/movies?featured=true">
+                  <Button variant="outline" className="hidden sm:flex">
+                    View All
+                    <ChevronRight className="w-4 h-4 ml-2" />
+                  </Button>
+                </Link>
               </div>
 
-              {/* Horizontal scroll strip on mobile, grid on md+ */}
-              <div className="relative">
-                <div className="overflow-x-auto no-scrollbar snap-x snap-mandatory -mx-4 px-4 flex gap-4 items-stretch sm:hidden">
-                  {featuredMovies.map((movie) => (
-                    <div key={movie._id} className="snap-start w-[72%] sm:w-56 md:w-64 flex-shrink-0 h-full">
-                      <MovieCard movie={movie} />
-                    </div>
-                  ))}
-                </div>
+              {/* Mobile horizontal scroll (compact) */}
+              <div className="overflow-x-auto no-scrollbar snap-x snap-mandatory -mx-4 px-4 flex gap-3 items-stretch sm:hidden">
+                {featuredMovies.map((movie) => (
+                  <div key={movie._id} className="snap-start w-1/2 flex-shrink-0 h-full">
+                    <MovieCard movie={movie} />
+                  </div>
+                ))}
+              </div>
 
-                {/* Desktop grid for larger screens */}
-                <div className="hidden sm:grid grid-cols-2 md:grid-cols-3 gap-4 auto-rows-fr items-stretch">
-                  {featuredMovies.map((movie) => (
-                    <div key={movie._id} className="h-full">
-                      <MovieCard movie={movie} />
-                    </div>
-                  ))}
-                </div>
+              {/* Desktop grid for larger screens */}
+              <div className="hidden sm:grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+                {loading ? (
+                  Array.from({ length: 6 }).map((_, i) => <LoadingSkeleton key={i} />)
+                ) : (
+                  featuredMovies.map((movie) => <MovieCard key={movie._id} movie={movie} />)
+                )}
               </div>
             </section>
           )}

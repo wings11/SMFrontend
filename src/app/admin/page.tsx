@@ -147,6 +147,8 @@ const MovieForm = ({
 
   const [episodes, setEpisodes] = useState<EpisodeInput[]>([])
   const [newEpisode, setNewEpisode] = useState<{ season: number; episodeNumber: number; title: string; watchUrl: string; thumbnailUrl: string; duration?: number | string; isPublished: boolean; downloads?: Partial<Record<'360'|'480'|'720'|'1080', Array<{source?:string;url?:string}>>> }>({ season: 1, episodeNumber: 1, title: '', watchUrl: '', thumbnailUrl: '', duration: undefined, isPublished: true, downloads: DEFAULT_DOWNLOADS })
+  const [activeFormTab, setActiveFormTab] = useState<'normal' | 'downloads'>('normal')
+  const [downloadsTarget, setDownloadsTarget] = useState<string>('movie') // 'movie' | episode._id | 'new'
 
   const [fetchUrl, setFetchUrl] = useState('')
   const [isFetching, setIsFetching] = useState(false)
@@ -181,6 +183,8 @@ const MovieForm = ({
       // Load episodes for series (keep existing episodes state if already loaded)
       setFetchUrl('')
       setFetchSuccess(false)
+      // default to Normal view when opening the edit modal
+      setActiveFormTab('normal')
     } else {
       // only reset when dialog opens for creating a new movie
       setFormData({
@@ -205,6 +209,8 @@ const MovieForm = ({
       setFetchUrl('')
       setFetchSuccess(false)
       setEpisodes([])
+      // default to Normal view for new movie modal as well
+      setActiveFormTab('normal')
     }
     // We intentionally only watch isOpen and movie?._id to avoid re-initializing on unrelated prop changes
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -334,7 +340,29 @@ const MovieForm = ({
   }
 
   const handleRemoveEpisode = (id: string) => {
+    // Optimistic UI remove; persist deletion for real episodes (ids not starting with tmp-)
     setEpisodes(prev => prev.filter(e => e._id !== id))
+    if (!id.startsWith('tmp-')) {
+      // call backend to soft-delete the episode
+      ;(async () => {
+        try {
+          const { adminAPI } = await import('@/lib/api')
+          await adminAPI.deleteEpisode(id)
+        } catch (err) {
+          console.error('Failed to delete episode on server, reverting UI remove', err)
+          // revert: refetch episodes or at least re-add placeholder so admin can retry
+          try {
+            if (movie && movie._id) {
+              const { moviesAPI } = await import('@/lib/api')
+              const res = await moviesAPI.getEpisodes(movie._id)
+              if (res && res.success) setEpisodes(res.data || [])
+            }
+          } catch (e) {
+            console.error('Failed to refresh episodes after failed delete', e)
+          }
+        }
+      })()
+    }
   }
 
   return (
@@ -346,9 +374,20 @@ const MovieForm = ({
             {!movie && 'Paste an IMDb or TMDB URL to auto-fill movie details, or fill manually.'}
           </DialogDescription>
         </DialogHeader>
+        {/* Form tabs: Normal / Downloads */}
+        <div className="px-6">
+          <div className="flex items-center gap-2 mb-4">
+            <button type="button" onClick={() => setActiveFormTab('normal')} className={`px-3 py-1 rounded ${activeFormTab === 'normal' ? 'bg-[#176DA6] text-white' : 'bg-gray-100 text-gray-700'}`}>
+              Normal
+            </button>
+            <button type="button" onClick={() => setActiveFormTab('downloads')} className={`px-3 py-1 rounded ${activeFormTab === 'downloads' ? 'bg-[#176DA6] text-white' : 'bg-gray-100 text-gray-700'}`}>
+              Download Links
+            </button>
+          </div>
+        </div>
         
-        {/* Auto-fetch section - only for new movies */}
-        {!movie && (
+  {/* Auto-fetch section - only for new movies (Normal tab only) */}
+  {!movie && activeFormTab === 'normal' && (
           <div className="border rounded-lg p-4 bg-gray-50 dark:bg-gray-800">
             <Label htmlFor="fetchUrl">Auto-fetch from URL</Label>
             <div className="flex gap-2 mt-2">
@@ -376,6 +415,8 @@ const MovieForm = ({
         )}
         
         <form onSubmit={handleSubmit} className="space-y-6">
+          {activeFormTab === 'normal' && (
+          <div>
           <div>
             <Label htmlFor="title">Title *</Label>
             <Input
@@ -423,20 +464,25 @@ const MovieForm = ({
               </div>
             )}
           </div>
-
           <div>
-            <Label htmlFor="telegramLink">Telegram Link *</Label>
-            <Input
-              id="telegramLink"
-              type="url"
-              placeholder="https://t.me/yourchannel/123"
-              value={formData.telegramLink}
-              onChange={(e) => setFormData(prev => ({ ...prev, telegramLink: e.target.value }))}
-              required
-            />
+            {/* Telegram Link (Normal tab only) */}
+            {activeFormTab === 'normal' && (
+              <>
+              <Label htmlFor="telegramLink">Telegram Link *</Label>
+              <Input
+                id="telegramLink"
+                type="url"
+                placeholder="https://t.me/yourchannel/123"
+                value={formData.telegramLink}
+                onChange={(e) => setFormData(prev => ({ ...prev, telegramLink: e.target.value }))}
+                required
+              />
+              </>
+            )}
           </div>
 
-          {/* Media URLs - editable so admins can fill or correct poster/trailer/backdrop links manually */}
+          {/* Media URLs - editable so admins can fill or correct poster/trailer/backdrop links manually (Normal tab only) */}
+          {activeFormTab === 'normal' && (
           <div className="grid grid-cols-1 gap-4 p-4 border rounded-lg bg-muted/50">
             <h4 className="font-medium text-sm text-muted-foreground">Media URLs (editable)</h4>
 
@@ -498,53 +544,12 @@ const MovieForm = ({
                 onChange={(e) => setFormData(prev => ({ ...prev, backdropUrl: e.target.value }))}
               />
             </div>
-            
-            {/* Download links per resolution */}
-            <div className="col-span-3 mt-2">
-              <h5 className="text-sm font-medium">Download Links</h5>
-              <p className="text-xs text-gray-500">Add optional download sources for common resolutions (360, 480, 720, 1080). You can add multiple links per resolution.</p>
-              <div className="grid grid-cols-1 gap-3 mt-3">
-                {(['360','480','720','1080'] as const).map((res) => (
-                  <div key={res} className="border rounded p-3">
-                    <div className="flex items-center justify-between">
-                      <div className="text-sm font-medium">{res}p</div>
-                      <Button size="sm" type="button" onClick={() => {
-                        setFormData(prev => ({ ...prev, downloads: { ...(prev.downloads || {}), [res]: [ ...(prev.downloads?.[res] || []), { source: '', url: '' } ] } }))
-                      }}>Add link</Button>
-                    </div>
-                    <div className="mt-2 space-y-2">
-                      {(formData.downloads?.[res] || []).map((item, idx) => (
-                        <div key={idx} className="grid grid-cols-12 gap-2 items-start">
-                          <div className="col-span-5">
-                            <Input placeholder="Source (Mega, Google Drive, etc.)" value={item.source || ''} onChange={(e) => {
-                              const next = (formData.downloads?.[res] || []).slice()
-                              next[idx] = { ...(next[idx] || {}), source: e.target.value }
-                              setFormData(prev => ({ ...prev, downloads: { ...(prev.downloads || {}), [res]: next } }))
-                            }} />
-                          </div>
-                          <div className="col-span-6">
-                            <Input placeholder="https://..." value={item.url || ''} onChange={(e) => {
-                              const next = (formData.downloads?.[res] || []).slice()
-                              next[idx] = { ...(next[idx] || {}), url: e.target.value }
-                              setFormData(prev => ({ ...prev, downloads: { ...(prev.downloads || {}), [res]: next } }))
-                            }} />
-                          </div>
-                          <div className="col-span-1">
-                            <Button size="sm" variant="destructive" type="button" onClick={() => {
-                              const next = (formData.downloads?.[res] || []).slice()
-                              next.splice(idx, 1)
-                              setFormData(prev => ({ ...prev, downloads: { ...(prev.downloads || {}), [res]: next } }))
-                            }}>Remove</Button>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
           </div>
+          )}
 
+          {/* Downloads block moved below so it's outside the Normal tab conditional */}
+
+          {activeFormTab === 'normal' && (
           <div>
             <Label htmlFor="description">Description</Label>
             <Textarea
@@ -554,7 +559,9 @@ const MovieForm = ({
               onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
             />
           </div>
+          )}
 
+          {activeFormTab === 'normal' && (
           <div>
             <Label htmlFor="genre">Genres (comma-separated)</Label>
             <Input
@@ -564,7 +571,9 @@ const MovieForm = ({
               onChange={(e) => { handleGenreChange(e.target.value); console.log('genre input change', e.target.value); }}
             />
           </div>
+          )}
 
+          {activeFormTab === 'normal' && (
           <div className="grid grid-cols-3 gap-4">
             <div>
               <Label htmlFor="imdbRating">IMDb Rating (0-10)</Label>
@@ -602,7 +611,9 @@ const MovieForm = ({
               />
             </div>
           </div>
+          )}
 
+          {activeFormTab === 'normal' && (
           <div>
             <Label htmlFor="tags">Tags (choose up to 5)</Label>
             <div className="mt-2">
@@ -627,9 +638,10 @@ const MovieForm = ({
               <p className="text-sm text-gray-500 mt-1">Selected: {formData.tags.length} / 5</p>
             </div>
           </div>
+          )}
 
-          {/* Episodes management - visible for series */}
-          {formData.type === 'series' && (
+          {/* Episodes management - visible for series (Normal tab only) */}
+          {activeFormTab === 'normal' && formData.type === 'series' && (
             <div className="border rounded p-3 space-y-3">
               <h4 className="font-medium">Episodes</h4>
               {episodes.length === 0 ? (
@@ -641,6 +653,8 @@ const MovieForm = ({
                       <div>
                         <div className="font-medium">{ep.title || `S${ep.season}E${ep.episodeNumber}`}</div>
                         <div className="text-sm text-gray-500">Episode {ep.episodeNumber} • Season {ep.season}</div>
+
+                        {/* Episode downloads are shown in the Downloads tab (see Downloads section below) */}
                       </div>
                       <div className="flex items-center gap-2">
                         <a href={ep.watchUrl} target="_blank" rel="noreferrer" className="text-blue-600">Open</a>
@@ -664,46 +678,7 @@ const MovieForm = ({
                   <Label>Watch URL</Label>
                   <Input value={newEpisode.watchUrl} onChange={(e) => setNewEpisode(prev => ({ ...prev, watchUrl: e.target.value }))} placeholder="https://t.me/yourchannel/123 or https://.../video.mp4" />
                 </div>
-                <div className="col-span-3">
-                  <Label>Episode Download Links (optional)</Label>
-                  <div className="grid grid-cols-2 gap-2 mt-2">
-                    {(['360','480','720','1080'] as const).map((res) => (
-                      <div key={res} className="border rounded p-2">
-                        <div className="flex items-center justify-between">
-                          <div className="text-sm font-medium">{res}p</div>
-                          <Button size="sm" type="button" onClick={() => setNewEpisode(prev => ({ ...prev, downloads: { ...(prev.downloads || {}), [res]: [ ...(prev.downloads?.[res] || []), { source: '', url: '' } ] } }))}>Add link</Button>
-                        </div>
-                        <div className="mt-2 space-y-2">
-                          {((newEpisode.downloads?.[res] || []) as Array<{ source?: string; url?: string }>).map((it, idx) => (
-                            <div key={idx} className="grid grid-cols-12 gap-2 items-start">
-                              <div className="col-span-5">
-                                <Input placeholder="Source" value={it.source || ''} onChange={(e) => {
-                                  const next = (newEpisode.downloads?.[res] || []).slice()
-                                  next[idx] = { ...(next[idx] || {}), source: e.target.value }
-                                  setNewEpisode(prev => ({ ...prev, downloads: { ...(prev.downloads || {}), [res]: next } }))
-                                }} />
-                              </div>
-                              <div className="col-span-6">
-                                <Input placeholder="https://..." value={it.url || ''} onChange={(e) => {
-                                  const next = (newEpisode.downloads?.[res] || []).slice()
-                                  next[idx] = { ...(next[idx] || {}), url: e.target.value }
-                                  setNewEpisode(prev => ({ ...prev, downloads: { ...(prev.downloads || {}), [res]: next } }))
-                                }} />
-                              </div>
-                              <div className="col-span-1">
-                                <Button size="sm" variant="destructive" type="button" onClick={() => {
-                                  const next = (newEpisode.downloads?.[res] || []).slice()
-                                  next.splice(idx, 1)
-                                  setNewEpisode(prev => ({ ...prev, downloads: { ...(prev.downloads || {}), [res]: next } }))
-                                }}>Remove</Button>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
+                {/* Episode download editing is available in the Downloads tab (rendered after the Normal tab block) */}
                 <div className="flex items-center gap-2">
                   <Button type="button" onClick={handleAddEpisode}><Plus className="w-4 h-4 mr-2" />Add Episode</Button>
                 </div>
@@ -711,6 +686,7 @@ const MovieForm = ({
             </div>
           )}
 
+          {activeFormTab === 'normal' && (
           <div className="flex items-center space-x-2">
             <Switch
               id="featured"
@@ -719,6 +695,126 @@ const MovieForm = ({
             />
             <Label htmlFor="featured">Featured Content</Label>
           </div>
+          )}
+
+          </div>
+          )}
+
+          {/* Downloads tab: choose a target (movie / existing episode / new episode) and edit downloads for that target */}
+          {activeFormTab === 'downloads' && (
+            <div className="col-span-3 mt-2 border rounded p-4 bg-muted/20">
+              <h5 className="text-sm font-medium">Download Links</h5>
+              <p className="text-xs text-gray-500">Pick a target to edit download links: the movie, an existing episode, or the new episode you&apos;re adding.</p>
+
+              <div className="mt-3 space-y-3">
+                <div className="flex items-center gap-2">
+                  <Label>Target</Label>
+                  <select value={downloadsTarget} onChange={(e) => setDownloadsTarget(e.target.value)} className="border rounded px-2 py-1">
+                    <option value="movie">Movie</option>
+                    {episodes.map(ep => (
+                      <option key={ep._id} value={ep._id}>{ep.title || `S${ep.season}E${ep.episodeNumber}`}</option>
+                    ))}
+                    <option value="new">New Episode</option>
+                  </select>
+                </div>
+
+                {/* helper to read/update downloads for the selected target */}
+                <div>
+                  {(['360','480','720','1080'] as const).map((res) => (
+                      <div key={res} className="border rounded p-3">
+                        <div className="flex items-center justify-between">
+                          <div className="text-sm font-medium">{res}p</div>
+                          <Button size="sm" variant="ghost" type="button" className="animate-pulse" onClick={() => {
+                            if (downloadsTarget === 'movie') {
+                              setFormData(prev => ({ ...prev, downloads: { ...(prev.downloads || {}), [res]: [ ...(prev.downloads?.[res] || []), { source: '', url: '' } ] } }))
+                            } else if (downloadsTarget === 'new') {
+                              setNewEpisode(prev => ({ ...prev, downloads: { ...(prev.downloads || {}), [res]: [ ...(prev.downloads?.[res] || []), { source: '', url: '' } ] } }))
+                            } else {
+                              // existing episode
+                              setEpisodes(prev => prev.map(ep => ep._id === downloadsTarget ? { ...ep, downloads: { ...(ep.downloads || {}), [res]: [ ...(ep.downloads?.[res] || []), { source: '', url: '' } ] } } : ep))
+                            }
+                          }}>
+                            <Plus className="w-4 h-4" />
+                          </Button>
+                        </div>
+
+                        <div className="mt-2 space-y-2">
+                        {/* read the list for the current target */}
+                        {((downloadsTarget === 'movie' ? (formData.downloads?.[res] || []) : downloadsTarget === 'new' ? (newEpisode.downloads?.[res] || []) : (episodes.find(ep => ep._id === downloadsTarget)?.downloads?.[res] || [])) as Array<{ source?: string; url?: string }>).map((item, idx) => (
+                          <div key={idx} className="grid grid-cols-12 gap-2 items-start">
+                            <div className="col-span-5">
+                              <Input placeholder="Source (Mega, Google Drive, etc.)" value={item.source || ''} onChange={(e) => {
+                                const nextVal = e.target.value
+                                if (downloadsTarget === 'movie') {
+                                  const next = (formData.downloads?.[res] || []).slice()
+                                  next[idx] = { ...(next[idx] || {}), source: nextVal }
+                                  setFormData(prev => ({ ...prev, downloads: { ...(prev.downloads || {}), [res]: next } }))
+                                } else if (downloadsTarget === 'new') {
+                                  const next = (newEpisode.downloads?.[res] || []).slice()
+                                  next[idx] = { ...(next[idx] || {}), source: nextVal }
+                                  setNewEpisode(prev => ({ ...prev, downloads: { ...(prev.downloads || {}), [res]: next } }))
+                                } else {
+                                  setEpisodes(prev => prev.map(ep => {
+                                    if (ep._id !== downloadsTarget) return ep
+                                    const next = (ep.downloads?.[res] || []).slice()
+                                    next[idx] = { ...(next[idx] || {}), source: nextVal }
+                                    return { ...ep, downloads: { ...(ep.downloads || {}), [res]: next } }
+                                  }))
+                                }
+                              }} />
+                            </div>
+                            <div className="col-span-6">
+                              <Input placeholder="https://..." value={item.url || ''} onChange={(e) => {
+                                const nextVal = e.target.value
+                                if (downloadsTarget === 'movie') {
+                                  const next = (formData.downloads?.[res] || []).slice()
+                                  next[idx] = { ...(next[idx] || {}), url: nextVal }
+                                  setFormData(prev => ({ ...prev, downloads: { ...(prev.downloads || {}), [res]: next } }))
+                                } else if (downloadsTarget === 'new') {
+                                  const next = (newEpisode.downloads?.[res] || []).slice()
+                                  next[idx] = { ...(next[idx] || {}), url: nextVal }
+                                  setNewEpisode(prev => ({ ...prev, downloads: { ...(prev.downloads || {}), [res]: next } }))
+                                } else {
+                                  setEpisodes(prev => prev.map(ep => {
+                                    if (ep._id !== downloadsTarget) return ep
+                                    const next = (ep.downloads?.[res] || []).slice()
+                                    next[idx] = { ...(next[idx] || {}), url: nextVal }
+                                    return { ...ep, downloads: { ...(ep.downloads || {}), [res]: next } }
+                                  }))
+                                }
+                              }} />
+                            </div>
+                            <div className="col-span-1 flex items-center">
+                              <Button size="sm" variant="destructive" type="button" className="transform hover:scale-110 transition-transform" onClick={() => {
+                                if (downloadsTarget === 'movie') {
+                                  const next = (formData.downloads?.[res] || []).slice()
+                                  next.splice(idx, 1)
+                                  setFormData(prev => ({ ...prev, downloads: { ...(prev.downloads || {}), [res]: next } }))
+                                } else if (downloadsTarget === 'new') {
+                                  const next = (newEpisode.downloads?.[res] || []).slice()
+                                  next.splice(idx, 1)
+                                  setNewEpisode(prev => ({ ...prev, downloads: { ...(prev.downloads || {}), [res]: next } }))
+                                } else {
+                                  setEpisodes(prev => prev.map(ep => {
+                                    if (ep._id !== downloadsTarget) return ep
+                                    const next = (ep.downloads?.[res] || []).slice()
+                                    next.splice(idx, 1)
+                                    return { ...ep, downloads: { ...(ep.downloads || {}), [res]: next } }
+                                  }))
+                                }
+                              }}>
+                                <Trash2 className="w-4 h-4" />
+                              </Button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
 
           <DialogFooter>
             <Button type="button" variant="outline" onClick={onClose} disabled={isLoading}>
@@ -1075,17 +1171,11 @@ export default function AdminDashboard() {
                     <div className="flex flex-col sm:flex-row sm:justify-between items-start gap-3">
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-2">
-                          <h3 className={`text-lg font-semibold truncate ${!movie.isActive ? 'line-through text-gray-500' : ''}`} title={movie.title}>{movie.title}</h3>
+                          <h3 className={`text-lg font-semibold truncate flex-1 min-w-0 ${!movie.isActive ? 'line-through text-gray-500' : ''}`} title={movie.title}>{movie.title}</h3>
                           <Badge variant={movie.type === 'movie' ? 'default' : 'secondary'}>
                             {movie.type === 'movie' ? <Film className="w-3 h-3 mr-1" /> : <Tv className="w-3 h-3 mr-1" />}
                             {movie.type}
                           </Badge>
-                          {movie.isFeatured && (
-                            <Badge variant="destructive">
-                              <Star className="w-3 h-3 mr-1" />
-                              Featured
-                            </Badge>
-                          )}
                           {!movie.isActive && <Badge variant="outline">Deleted</Badge>}
                         </div>
                         <p className="text-gray-600 dark:text-gray-400 text-sm mb-2 line-clamp-2 min-w-0">
@@ -1120,6 +1210,14 @@ export default function AdminDashboard() {
                             {movie.clickCount.toLocaleString()} views
                           </span>
                         </div>
+                        {movie.isFeatured && (
+                          <div className="mt-2">
+                            <Badge variant="destructive">
+                              <Star className="w-3 h-3 mr-1" />
+                              Featured
+                            </Badge>
+                          </div>
+                        )}
                       </div>
                       <div className="w-full sm:w-auto mt-0 sm:mt-0 sm:ml-4 flex-shrink-0">
                         {/* On small screens place buttons in a row below the content; on larger screens keep them inline */}

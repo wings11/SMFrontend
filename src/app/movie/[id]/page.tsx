@@ -13,7 +13,6 @@ import {
   Calendar, 
   Clock, 
   Play, 
-  TrendingUp, 
   Film, 
   Tv, 
   ArrowLeft,
@@ -259,6 +258,32 @@ const MovieDetailPage = () => {
     }
   }
 
+  // Small component to render a download link: show only icon when available (bigger 28px), fall back to text
+  const DownloadLink = ({ url, provider }: { url: string; provider: string }) => {
+    const [hasIcon, setHasIcon] = useState(true)
+    let domain = ''
+    try { domain = new URL(url).hostname.replace(/^www\./, '') } catch { domain = '' }
+    const faviconSrc = domain ? `https://www.google.com/s2/favicons?domain=${encodeURIComponent(domain)}&sz=64` : ''
+
+    return (
+      <a href={url} target="_blank" rel="noreferrer" className="flex items-center gap-1 md:gap-2 text-blue-600 dark:text-blue-400" title={url}>
+        {hasIcon && faviconSrc ? (
+          <Image
+            src={faviconSrc}
+            alt={provider}
+            width={28}
+            height={28}
+            className="w-7 h-7 object-contain"
+            onError={() => setHasIcon(false)}
+            unoptimized
+          />
+        ) : (
+          <span className="text-sm">{provider}</span>
+        )}
+      </a>
+    )
+  }
+
   const handleShare = async () => {
     if (navigator.share) {
       try {
@@ -485,10 +510,7 @@ const MovieDetailPage = () => {
                   </div>
                 )}
                 
-                <div className="flex items-center gap-1 text-gray-600 dark:text-gray-400">
-                  <TrendingUp className="w-4 h-4" />
-                  {movie.clickCount.toLocaleString()} views
-                </div>
+                {/* Views removed from public UI */}
               </div>
 
               {/* Details */}
@@ -595,31 +617,7 @@ const MovieDetailPage = () => {
                                 </div>
                               </div>
 
-                              {/* Episode-level downloads (admin-provided) */}
-                              {(() => {
-                                const epDownloads = (ep as unknown as { downloads?: Partial<Record<'360'|'480'|'720'|'1080', Array<{ source?: string; url?: string }>>> }).downloads
-                                if (!epDownloads || Object.keys(epDownloads).length === 0) return null
-                                return (
-                                  <div className="mt-2 ml-2">
-                                    {(['360','480','720','1080'] as const).map(res => {
-                                      const arr = (epDownloads || {})[res] as Array<{ source?: string; url?: string }> | undefined
-                                      if (!arr || !Array.isArray(arr) || arr.length === 0) return null
-                                      return (
-                                        <div key={res} className="mb-2">
-                                          <div className="text-sm font-medium">{res}p</div>
-                                          <div className="flex flex-col gap-1">
-                                            {arr.map((it, idx) => (
-                                              <a key={idx} href={it.url || '#'} target="_blank" rel="noreferrer" className="text-blue-600 dark:text-blue-400 underline text-sm">
-                                                {it.source ? `${it.source} — ${it.url}` : it.url}
-                                              </a>
-                                            ))}
-                                          </div>
-                                        </div>
-                                      )
-                                    })}
-                                  </div>
-                                )
-                              })()}
+                              {/* Episode-level downloads were moved to the Downloads section below */}
                             </div>
                           </div>
                         ))}
@@ -646,12 +644,23 @@ const MovieDetailPage = () => {
                       return (
                         <div key={res}>
                           <div className="font-medium mb-2">{res}p</div>
-                          <div className="flex flex-col gap-2">
-                            {arr.map((it, idx) => (
-                              <a key={idx} href={it.url || '#'} target="_blank" rel="noreferrer" className="text-blue-600 dark:text-blue-400 underline">
-                                {it.source ? `${it.source} — ${it.url}` : it.url}
-                              </a>
-                            ))}
+                          <div className="flex flex-row flex-wrap gap-1 md:gap-2 items-center">
+                            {arr.map((it, idx) => {
+                              const url = it.url || '#'
+                              const provider = it.source && it.source.trim() !== '' ? it.source : (() => {
+                                try {
+                                  const d = new URL(url).hostname.replace('www.','')
+                                  if (d.includes('mega')) return 'Mega'
+                                  if (d.includes('drive.google') || d.includes('google')) return 'Google Drive'
+                                  if (d.includes('dropbox')) return 'Dropbox'
+                                  if (d.includes('yandex')) return 'Yandex'
+                                  return d
+                                } catch { return url }
+                              })()
+                              return (
+                                <DownloadLink key={idx} url={url} provider={provider} />
+                              )
+                            })}
                           </div>
                         </div>
                       )
@@ -661,6 +670,57 @@ const MovieDetailPage = () => {
                 </Card>
               )
             })()}
+
+            {/* Episode-level downloads (admin-provided) - render here under Downloads */}
+            {episodes.length > 0 && (
+              <Card>
+                <CardHeader>
+                  <h2 className="text-xl font-semibold">Episode Downloads</h2>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    {episodes.map(ep => {
+                      const epDownloads = (ep as unknown as { downloads?: Partial<Record<'360'|'480'|'720'|'1080', Array<{ source?: string; url?: string }>>> }).downloads
+                      if (!epDownloads || Object.keys(epDownloads).length === 0) return null
+                      return (
+                        <div key={ep._id} className="border rounded p-3">
+                          <div className="font-medium mb-1">{ep.title || `Season ${ep.season} • Episode ${ep.episodeNumber}`}</div>
+                          <div className="space-y-2">
+                            {(['360','480','720','1080'] as const).map(res => {
+                              const arr = (epDownloads || {})[res] as Array<{ source?: string; url?: string }> | undefined
+                              if (!arr || !Array.isArray(arr) || arr.length === 0) return null
+                              return (
+                                <div key={res}>
+                                  <div className="font-medium mb-1">{res}p</div>
+                                  <div className="flex flex-row flex-wrap gap-5 md:gap-5 items-center">
+                                    {arr.map((it, idx) => {
+                                      const url = it.url || '#'
+                                      const provider = it.source && it.source.trim() !== '' ? it.source : (() => {
+                                        try {
+                                          const d = new URL(url).hostname.replace('www.','')
+                                          if (d.includes('mega')) return 'Mega'
+                                          if (d.includes('drive.google') || d.includes('google')) return 'Google Drive'
+                                          if (d.includes('dropbox')) return 'Dropbox'
+                                          if (d.includes('yandex')) return 'Yandex'
+                                          return d
+                                        } catch { return url }
+                                      })()
+                                      return (
+                                        <DownloadLink key={idx} url={url} provider={provider} />
+                                      )
+                                    })}
+                                  </div>
+                                </div>
+                              )
+                            })}
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
 
             {/* Description */}
             <Card>

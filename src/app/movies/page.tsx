@@ -9,7 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 // expandable text removed for compact movies grid
 import { ScrollToTop } from '@/components/ui/scroll-to-top';
-import { Film, Star, Clock, Calendar, TrendingUp, Search, Filter, ChevronLeft, ChevronRight, Tv } from 'lucide-react';
+import { Film, Star, Clock, Calendar, Search, Filter, ChevronLeft, ChevronRight, Tv } from 'lucide-react';
 import Image from 'next/image'
 import { isLikelyImageUrl } from '@/lib/imageUtils'
 import Link from 'next/link';
@@ -182,7 +182,7 @@ const MoviesPage = () => {
           </div>
         </div>
 
-        <div className="space-y-1 text-[11px] text-muted-foreground">
+          <div className="space-y-1 text-[11px] text-muted-foreground">
           {movie.year && (
             <div className="flex items-center">
               <Calendar className="h-3 w-3 mr-1" />
@@ -211,10 +211,7 @@ const MoviesPage = () => {
             </div>
           )}
 
-          <div className="flex items-center">
-            <TrendingUp className="h-3 w-3 mr-1" />
-            {movie.clickCount.toLocaleString()} views
-          </div>
+          {/* Views removed from public listing */}
         </div>
 
         <div className="flex gap-2 mt-4">
