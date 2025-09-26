@@ -389,13 +389,11 @@ export default function HomePage() {
   return (
     <div className="min-h-screen bg-white dark:bg-black">
       
-      {/* Featured Hero Section - black & white theme */}
-      <section className="relative bg-black overflow-hidden">
-        <div className="absolute inset-0 bg-white/5" />
-        
+      {/* Featured Hero Section (neutral background) */}
+      <section className="relative overflow-hidden bg-transparent">
         <div className="relative z-10 container mx-auto px-4 py-8 md:py-12">
           {/* Header (logo + search). Ads moved to sticky banner above */}
-          <div className="flex flex-col sm:flex-row items-center justify-between text-white mb-8 gap-4">
+          <div className="flex flex-col sm:flex-row items-center justify-between text-gray-900 dark:text-white mb-8 gap-4">
             {/* Logo */}
             <Link href="/" className="flex items-center gap-3">
               <div className="w-28 h-28 relative overflow-hidden flex items-center justify-center">
@@ -410,20 +408,20 @@ export default function HomePage() {
             {/* Search Bar (small screens below the logo) */}
             <form onSubmit={handleSearch} className="w-full sm:w-auto max-w-md mx-auto sm:mx-0">
               <div className="relative">
-                <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-500 dark:text-gray-300 w-5 h-5" />
                 <Input
                   type="text"
                   placeholder="Search movies..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-12 pr-4 py-3 bg-white/10 backdrop-blur-sm border-white/20 text-white placeholder-white/70 rounded-full"
+                  className="pl-12 pr-4 py-3 bg-white/10 dark:bg-white/10 backdrop-blur-sm border-gray-200 dark:border-white/20 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-white/70 rounded-full"
                 />
                 <Button 
                   type="submit" 
                   size="sm"
                   className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-white text-black hover:bg-gray-100 rounded-full"
                 >
-                  <Search className="w-4 h-4" />
+                  <Search className="w-4 h-4 text-black dark:text-white" />
                 </Button>
               </div>
             </form>
@@ -434,8 +432,8 @@ export default function HomePage() {
             <section className="my-6">
               <div className="flex items-center justify-between mb-3">
                 <div>
-                  <h2 className="text-2xl md:text-3xl font-bold text-white"><Star className="w-5 h-5 mr-2 inline animate-bounce" />Featured</h2>
-                  <p className="text-sm text-white/80">Top picks for you</p>
+                  <h2 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white"><Star className="w-5 h-5 mr-2 inline animate-bounce" />Featured</h2>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">Top picks for you</p>
                 </div>
                 <Link href="/movies?featured=true">
                   <Button variant="outline" className="hidden sm:flex">
@@ -476,7 +474,7 @@ export default function HomePage() {
             <Link href="/movies">
               <Button 
                 size="lg" 
-                className="bg-white text-black hover:bg-gray-100 w-full sm:w-auto"
+                className="bg-white text-black hover:bg-gray-100 w-full sm:w-auto border-2 border-[#176DA6] dark:border-[#176DA6]"
               >
                 <Film className="w-5 h-5 mr-2" />
                 Browse All Movies & Series
