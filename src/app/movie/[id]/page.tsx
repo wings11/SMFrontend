@@ -559,7 +559,15 @@ const MovieDetailPage = () => {
                 </CardContent>
               </Card>
             )}
-
+{/* Description */}
+            <Card>
+              <CardHeader>
+                <h2 className="text-xl font-semibold">Review</h2>
+              </CardHeader>
+              <CardContent>
+                <p className="text-gray-700 dark:text-gray-300 leading-relaxed whitespace-pre-line">{movie.description}</p>
+              </CardContent>
+            </Card>
               {/* Episodes list for series */}
               {movie.type === 'series' && (
                 <Card>
@@ -722,15 +730,7 @@ const MovieDetailPage = () => {
               </Card>
             )}
 
-            {/* Description */}
-            <Card>
-              <CardHeader>
-                <h2 className="text-xl font-semibold">Overview</h2>
-              </CardHeader>
-              <CardContent>
-                <p className="text-gray-700 dark:text-gray-300 leading-relaxed whitespace-pre-line">{movie.description}</p>
-              </CardContent>
-            </Card>
+            
 
             {/* Tags */}
             {movie.tags.length > 0 && (
@@ -765,10 +765,7 @@ const MovieDetailPage = () => {
                     <span className="font-medium text-gray-600 dark:text-gray-400">Type:</span>
                     <span className="ml-2 capitalize">{movie.type}</span>
                   </div>
-                  <div>
-                    <span className="font-medium text-gray-600 dark:text-gray-400">Total Views:</span>
-                    <span className="ml-2">{movie.clickCount.toLocaleString()}</span>
-                  </div>
+                  
                 </div>
               </CardContent>
             </Card>
