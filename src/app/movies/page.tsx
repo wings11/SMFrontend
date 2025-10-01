@@ -305,7 +305,7 @@ const MoviesPage = () => {
       </div>
 
       {/* Search and Filters */}
-      <div className="bg-white rounded-lg shadow-sm border p-6 mb-8">
+      <div className=" rounded-lg shadow-sm border p-6 mb-8">
         <form onSubmit={handleSearch} className="space-y-4">
           <div className="flex gap-4">
             <div className="flex-1">
@@ -324,8 +324,8 @@ const MoviesPage = () => {
 
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <Select value={selectedGenre} onValueChange={setSelectedGenre}>
-              <SelectTrigger>
-                <SelectValue placeholder="Genre" />
+              <SelectTrigger className="text-foreground">
+                <SelectValue placeholder="Genre" className="text-black placeholder:text-muted-foreground" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Genres</SelectItem>
@@ -338,8 +338,8 @@ const MoviesPage = () => {
             </Select>
 
             <Select value={selectedTag} onValueChange={setSelectedTag}>
-              <SelectTrigger>
-                <SelectValue placeholder="Tag" />
+              <SelectTrigger className="text-foreground">
+                <SelectValue placeholder="Tag" className="text-black placeholder:text-muted-foreground" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Tags</SelectItem>
@@ -352,8 +352,8 @@ const MoviesPage = () => {
             </Select>
 
             <Select value={sortBy} onValueChange={setSortBy}>
-              <SelectTrigger>
-                <SelectValue placeholder="Sort by" />
+              <SelectTrigger className="text-foreground">
+                <SelectValue placeholder="Sort by" className="text-black placeholder:text-muted-foreground" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="createdAt">Date Added</SelectItem>
@@ -365,8 +365,8 @@ const MoviesPage = () => {
             </Select>
 
             <Select value={sortOrder} onValueChange={setSortOrder}>
-              <SelectTrigger>
-                <SelectValue placeholder="Order" />
+              <SelectTrigger className="text-foreground">
+                <SelectValue placeholder="Order" className="text-black placeholder:text-muted-foreground" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="desc">Descending</SelectItem>

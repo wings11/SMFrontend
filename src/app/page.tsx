@@ -64,9 +64,9 @@ const MovieCard = ({ movie, featured = false }: { movie: Movie; featured?: boole
   if (featured) {
     return (
       <div className="relative group overflow-hidden rounded-2xl bg-white dark:bg-gray-900 shadow-lg hover:shadow-xl transition-all duration-300">
-        <div className="flex flex-col md:flex-row min-h-[300px] md:min-h-[250px]">
+        <div className="flex flex-col md:flex-row min-h-[180px] md:min-h-[140px]">
           {/* Poster Image */}
-          <div className="relative w-full md:w-48 lg:w-56 flex-shrink-0">
+          <div className="relative w-full md:w-32 lg:w-40 flex-shrink-0">
             <div className="aspect-[2/3] md:h-full relative">
               {isLikelyImageUrl(movie.posterUrl) ? (
                 <Image
@@ -111,10 +111,10 @@ const MovieCard = ({ movie, featured = false }: { movie: Movie; featured?: boole
           </div>
           
           {/* Content */}
-          <div className="flex-1 p-4 md:p-6 flex flex-col justify-between">
+          <div className="flex-1 p-2 md:p-4 flex flex-col justify-between">
             <div className="space-y-3">
               {/* Title */}
-              <h3 className="text-xl md:text-2xl lg:text-3xl font-bold text-gray-900 dark:text-white leading-tight">
+              <h3 className="text-lg md:text-xl lg:text-2xl font-bold text-gray-900 dark:text-white leading-tight">
                 {movie.title}
               </h3>
               
@@ -144,8 +144,8 @@ const MovieCard = ({ movie, featured = false }: { movie: Movie; featured?: boole
               {/* Description */}
               <ExpandableText
                 text={movie.description}
-                maxLines={3}
-                className="text-gray-700 dark:text-gray-300 text-sm md:text-base"
+                maxLines={2}
+                className="text-gray-700 dark:text-gray-300 text-xs md:text-sm"
               />
               
               {/* Tags/Genres */}
@@ -164,25 +164,24 @@ const MovieCard = ({ movie, featured = false }: { movie: Movie; featured?: boole
             </div>
             
             {/* Watch Button */}
-            <div className="mt-4 flex gap-3">
+            <div className="mt-2 flex gap-2">
                 <Button 
-                onClick={handleWatchClick}
-                className="flex-1 bg-gradient-to-r from-[#176DA6] to-[#135685] hover:from-[#135685] hover:to-[#0f4664] text-white border-0 shadow-lg"
-                size="lg"
-              >
-                <Play className="w-5 h-5 mr-2 fill-white" />
-                Watch Now
-              </Button>
-              
-              <Link href={`/movie/${movie._id}`}>
-                <Button 
-                  variant="outline"
-                  size="lg"
-                  className="border-gray-300 hover:bg-gray-50 dark:border-gray-600 dark:hover:bg-gray-800"
+                  onClick={handleWatchClick}
+                  className="flex-1 bg-gradient-to-r from-[#176DA6] to-[#135685] hover:from-[#135685] hover:to-[#0f4664] text-white border-0 shadow-lg"
+                  size="sm"
                 >
-                  View Details
+                  <Play className="w-4 h-4 mr-1 fill-white" />
+                  Watch Now
                 </Button>
-              </Link>
+                <Link href={`/movie/${movie._id}`}>
+                  <Button 
+                    variant="outline"
+                    size="sm"
+                    className="border-gray-300 hover:bg-gray-50 dark:border-gray-600 dark:hover:bg-gray-800"
+                  >
+                    View Details
+                  </Button>
+                </Link>
             </div>
           </div>
         </div>
@@ -192,77 +191,55 @@ const MovieCard = ({ movie, featured = false }: { movie: Movie; featured?: boole
 
   return (
     <Card className="group hover:shadow-xl transition-all duration-300 border-0 bg-white dark:bg-gray-900 overflow-hidden h-full flex flex-col">
-      {/* Poster Image */}
-      <div className="relative aspect-[2/3] bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-700">
-              {movie.posterUrl ? (
-                <Image
-                  src={isLikelyImageUrl(movie.posterUrl) ? movie.posterUrl! : '/placeholder-movie.svg'}
-                  alt={movie.title}
-                  fill
-                  className="object-cover transition-transform duration-300 group-hover:scale-105"
-                  sizes="(max-width: 768px) 50vw, (max-width: 1200px) 33vw, 25vw"
-                />
-              ) : (
-          <div className="absolute inset-0 flex items-center justify-center">
-            <div className="text-center text-gray-400 dark:text-gray-600">
-              {movie.type === 'movie' ? (
-                <Film className="w-12 h-12 mx-auto mb-2" />
-              ) : (
-                <Tv className="w-12 h-12 mx-auto mb-2" />
-              )}
-              <p className="text-sm">No Poster</p>
+      {/* Poster Image (clickable, no hover overlay) */}
+      <Link href={`/movie/${movie._id}`}> 
+        <div className="relative aspect-[2/3] bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-700 cursor-pointer">
+          {movie.posterUrl ? (
+            <Image
+              src={isLikelyImageUrl(movie.posterUrl) ? movie.posterUrl! : '/placeholder-movie.svg'}
+              alt={movie.title}
+              fill
+              className="object-cover transition-transform duration-300 group-hover:scale-105"
+              sizes="(max-width: 768px) 50vw, (max-width: 1200px) 33vw, 25vw"
+            />
+          ) : (
+            <div className="absolute inset-0 flex items-center justify-center">
+              <div className="text-center text-gray-400 dark:text-gray-600">
+                {movie.type === 'movie' ? (
+                  <Film className="w-12 h-12 mx-auto mb-2" />
+                ) : (
+                  <Tv className="w-12 h-12 mx-auto mb-2" />
+                )}
+                <p className="text-sm">No Poster</p>
+              </div>
             </div>
-          </div>
-        )}
-        
-        {/* Overlay badges */}
-        <div className="absolute top-2 left-2 flex flex-col gap-1">
-          <Badge 
-            variant={movie.type === 'movie' ? 'default' : 'secondary'} 
-            className="text-xs bg-black/70 backdrop-blur-sm text-white border-0"
-          >
-            {movie.type === 'movie' ? 'Movie' : 'Series'}
-          </Badge>
-          {movie.isFeatured && (
-            <Badge className="text-xs bg-[#176DA6]/90 backdrop-blur-sm text-white border-0">
-              Featured
+          )}
+          {/* Overlay badges */}
+          <div className="absolute top-2 left-2 flex flex-col gap-1">
+            <Badge 
+              variant={movie.type === 'movie' ? 'default' : 'secondary'} 
+              className="text-xs bg-black/70 backdrop-blur-sm text-white border-0"
+            >
+              {movie.type === 'movie' ? 'Movie' : 'Series'}
             </Badge>
+            {movie.isFeatured && (
+              <Badge className="text-xs bg-[#176DA6]/90 backdrop-blur-sm text-white border-0">
+                Featured
+              </Badge>
+            )}
+          </div>
+          {movie.rating && (
+            <div className="absolute top-2 right-2">
+              <Badge className="text-xs bg-yellow-500/90 backdrop-blur-sm text-white border-0">
+                <Star className="w-3 h-3 mr-1 fill-white" />
+                {movie.rating}
+              </Badge>
+            </div>
           )}
         </div>
-        
-        {movie.rating && (
-          <div className="absolute top-2 right-2">
-            <Badge className="text-xs bg-yellow-500/90 backdrop-blur-sm text-white border-0">
-              <Star className="w-3 h-3 mr-1 fill-white" />
-              {movie.rating}
-            </Badge>
-          </div>
-        )}
-        
-        {/* Play button overlay */}
-        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-all duration-300 flex items-center justify-center">
-          <div className="opacity-0 group-hover:opacity-100 transition-all duration-300 transform scale-90 group-hover:scale-100 flex gap-2">
-            <Button 
-              onClick={handleWatchClick}
-              className="bg-[#176DA6]/90 backdrop-blur-sm hover:bg-[#135685]/90 text-white border-0"
-              size="sm"
-            >
-              <Play className="w-4 h-4 fill-white" />
-            </Button>
-            <Link href={`/movie/${movie._id}`}>
-              <Button 
-                className="bg-white/20 backdrop-blur-sm hover:bg-white/30 text-white border-white/30"
-                size="sm"
-              >
-                Details
-              </Button>
-            </Link>
-          </div>
-        </div>
-      </div>
-      
+      </Link>
       {/* Content */}
-  <CardContent className="p-3 flex-1">
+      <CardContent className="p-3 flex-1">
         <Link href={`/movie/${movie._id}`} className="block group-hover:text-blue-600 transition-colors">
           <h3 className="font-semibold text-sm leading-tight line-clamp-2 mb-2">
             {movie.title}
@@ -547,7 +524,6 @@ export default function HomePage() {
               </Button>
             </Link>
           </div>
-          
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
             {loading ? (
               Array.from({ length: 12 }).map((_, i) => <LoadingSkeleton key={i} />)
@@ -555,7 +531,6 @@ export default function HomePage() {
               recentMovies.map((movie) => <MovieCard key={movie._id} movie={movie} />)
             )}
           </div>
-          
           <div className="text-center mt-6 sm:hidden">
             <Link href="/movies?sortBy=createdAt&sortOrder=desc">
               <Button variant="outline">
@@ -563,6 +538,20 @@ export default function HomePage() {
                 <ChevronRight className="w-4 h-4 ml-2" />
               </Button>
             </Link>
+          </div>
+          {/* Inline Ad Box (not sticky) */}
+          <div className="w-full flex justify-center mt-8">
+            <div className="w-full max-w-5xl">
+              <Image 
+                src="/ads/sponsor-placeholder.svg" 
+                alt="Sponsor Ad" 
+                width={1200} 
+                height={180} 
+                className="rounded-xl object-cover w-full h-auto"
+                priority={false}
+                unoptimized
+              />
+            </div>
           </div>
         </section>
       </div>

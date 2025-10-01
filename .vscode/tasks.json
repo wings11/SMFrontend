@@ -1,0 +1,16 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "Next.js build and typecheck",
+			"type": "shell",
+			"command": "npm run build && npx tsc --noEmit",
+			"args": [],
+			"isBackground": false,
+			"problemMatcher": [
+				"$tsc"
+			],
+			"group": "build"
+		}
+	]
+}

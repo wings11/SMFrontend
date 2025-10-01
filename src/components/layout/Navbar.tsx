@@ -5,6 +5,8 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
+import { useTheme } from '@/contexts/ThemeContext';
+import { Sun, Moon } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -26,6 +28,7 @@ import {
 
 const Navbar = () => {
   const { user, logout, isAuthenticated, isAdmin } = useAuth();
+  const { theme, toggleTheme } = useTheme();
   const pathname = usePathname();
 
   const publicNavItems = [
@@ -66,7 +69,6 @@ const Navbar = () => {
             {getNavItems().map((item) => {
               const Icon = item.icon;
               const isActive = pathname === item.href;
-              
               return (
                 <Link key={item.href} href={item.href}>
                   <Button
@@ -79,6 +81,16 @@ const Navbar = () => {
                 </Link>
               );
             })}
+            {/* Theme Switch Button (Desktop) */}
+            <Button
+              variant="ghost"
+              size="sm"
+              aria-label="Toggle theme"
+              onClick={toggleTheme}
+              className="ml-2"
+            >
+              {theme === 'dark' ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
+            </Button>
           </div>
 
           {/* User Menu */}
@@ -126,7 +138,17 @@ const Navbar = () => {
             )}
 
             {/* Mobile Menu */}
-            <div className="md:hidden">
+            <div className="md:hidden flex items-center gap-2">
+              {/* Theme Switch Button */}
+              <Button
+                variant="ghost"
+                size="sm"
+                aria-label="Toggle theme"
+                onClick={toggleTheme}
+              >
+                {theme === 'dark' ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
+              </Button>
+              {/* Hamburger Menu */}
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" size="sm">

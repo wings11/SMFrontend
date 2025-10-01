@@ -23,43 +23,83 @@ import Image from 'next/image'
 import { isLikelyImageUrl } from '@/lib/imageUtils'
 import { moviesAPI } from '@/lib/api'
 
-// Client-only Comments component (UI only, no backend integration yet)
+// Real Comments component with backend integration
 const Comments = ({ movieId }: { movieId: string }) => {
-  const [comments, setComments] = useState<Array<{ id: string; name: string; text: string }>>([])
+  const [comments, setComments] = useState<Array<{ _id: string; name: string; comment: string; createdAt: string }>>([])
   const [name, setName] = useState('')
   const [text, setText] = useState('')
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
 
-  // Load example comments for testing
+  // Fetch comments for this movie
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL || '';
+  const fetchComments = async () => {
+    setLoading(true)
+    setError('')
+    try {
+      const res = await fetch(`${apiUrl}/comments/${movieId}`)
+      const data = await res.json()
+      if (data.success) {
+        setComments(data.comments)
+      } else {
+        setError('Failed to load comments')
+      }
+    } catch {
+      setError('Failed to load comments')
+    }
+    setLoading(false)
+  }
+
   useEffect(() => {
-    setComments([
-      { id: '1', name: 'Tester A', text: 'Nice upload! Thanks.' },
-      { id: '2', name: 'Tester B', text: 'Looking forward to more translations.' }
-    ])
+    fetchComments()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [movieId])
 
-  const handleAdd = (e: React.FormEvent) => {
+  const handleAdd = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!name.trim() || !text.trim()) return
-    setComments(prev => [{ id: Date.now().toString(), name: name.trim(), text: text.trim() }, ...prev])
-    setName('')
-    setText('')
+    setLoading(true)
+    setError('')
+    try {
+      const res = await fetch(`${apiUrl}/comments/${movieId}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: name.trim(), comment: text.trim() })
+      })
+      const data = await res.json()
+      if (data.success) {
+        setName('')
+        setText('')
+        fetchComments()
+      } else {
+        setError(data.error || 'Failed to post comment')
+      }
+    } catch {
+      setError('Failed to post comment')
+    }
+    setLoading(false)
   }
 
   return (
     <div>
       <form onSubmit={handleAdd} className="mb-4">
         <div className="flex gap-2">
-          <input placeholder="Your name" value={name} onChange={(e) => setName(e.target.value)} className="flex-1 border rounded px-3 py-2" />
-          <button className="bg-black text-white px-4 rounded">Add</button>
+          <input placeholder="Your name" value={name} onChange={(e) => setName(e.target.value)} className="flex-1 border rounded px-3 py-2" disabled={loading} />
+          <button className="bg-black text-white px-4 rounded" disabled={loading || !name.trim() || !text.trim()}>Add</button>
         </div>
-        <textarea placeholder="Write a comment..." value={text} onChange={(e) => setText(e.target.value)} className="w-full mt-2 border rounded p-2 h-24" />
+        <textarea placeholder="Write a comment..." value={text} onChange={(e) => setText(e.target.value)} className="w-full mt-2 border rounded p-2 h-24" disabled={loading} />
       </form>
-
+      {error && <div className="text-red-500 mb-2">{error}</div>}
       <div className="space-y-3">
+        {loading && <div>Loading comments...</div>}
+        {comments.length === 0 && !loading && <div className="text-gray-500">No comments yet.</div>}
         {comments.map(c => (
-          <div key={c.id} className="border rounded p-3">
-            <div className="font-medium">{c.name}</div>
-            <div className="text-sm text-gray-600">{c.text}</div>
+          <div key={c._id} className="border rounded p-3">
+            <div className="font-medium flex items-center gap-2">
+              {c.name}
+              <span className="text-xs text-gray-400">{new Date(c.createdAt).toLocaleString()}</span>
+            </div>
+            <div className="text-sm text-gray-600 whitespace-pre-line">{c.comment}</div>
           </div>
         ))}
       </div>
@@ -770,10 +810,10 @@ const MovieDetailPage = () => {
               </CardContent>
             </Card>
 
-            {/* Comments (client-only, UI-only for now) */}
+            {/* Comments (real, per-content) */}
             <Card>
               <CardHeader>
-                <h2 className="text-xl font-semibold">Comments (Test)</h2>
+                <h2 className="text-xl font-semibold">Comments</h2>
               </CardHeader>
               <CardContent>
                 <Comments movieId={movie._id} />
