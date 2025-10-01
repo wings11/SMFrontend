@@ -567,7 +567,11 @@ export default function HomePage() {
               <section key={tag}>
                 <div className="flex items-center justify-between mb-6">
                   <div>
-                    <h2 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white mb-2">{tag.charAt(0).toUpperCase() + tag.slice(1)}</h2>
+                    <Link href={`/movies?tag=${encodeURIComponent(tag)}`} prefetch={false}>
+                      <h2 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white mb-2 hover:text-[#176DA6] cursor-pointer transition-colors">
+                        {tag.charAt(0).toUpperCase() + tag.slice(1)}
+                      </h2>
+                    </Link>
                     <p className="text-gray-600 dark:text-gray-400">{`Latest ${tag} content`}</p>
                   </div>
                   <Link href={`/movies?search=${encodeURIComponent(tag)}`}>

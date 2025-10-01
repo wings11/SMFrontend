@@ -1,6 +1,8 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
 import { moviesAPI } from '@/lib/api';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -51,6 +53,8 @@ const MoviesPage = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedGenre, setSelectedGenre] = useState<string>('all');
   const [selectedTag, setSelectedTag] = useState<string>('all');
+  const router = useRouter();
+  const searchParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
   const [sortBy, setSortBy] = useState<string>('createdAt');
   const [sortOrder, setSortOrder] = useState<string>('desc');
 
@@ -92,9 +96,32 @@ const MoviesPage = () => {
     }
   }, [currentPage, searchQuery, activeTab, selectedGenre, selectedTag, sortBy, sortOrder, limit]);
 
+
+  // On mount, set selectedTag from URL if present
+  // On mount and when URL changes, set selectedTag from URL if present
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const tagParam = params.get('tag');
+      // Only update if tagParam is a non-empty string and different from selectedTag
+      if (tagParam && tagParam !== selectedTag) {
+        setSelectedTag(tagParam);
+        setActiveTab('all');
+        setSearchQuery('');
+        setSelectedGenre('all');
+        setSortBy('createdAt');
+        setSortOrder('desc');
+        setCurrentPage(1);
+      } else if ((!tagParam || tagParam === 'all') && selectedTag !== 'all') {
+        setSelectedTag('all');
+      }
+    }
+    // eslint-disable-next-line
+  }, [typeof window !== 'undefined' ? window.location.search : '']);
+
   useEffect(() => {
     fetchMovies();
-  }, [fetchMovies]);
+  }, [fetchMovies, selectedTag]);
 
   // Fetch available filter options
   useEffect(() => {
@@ -119,6 +146,11 @@ const MoviesPage = () => {
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     setCurrentPage(1);
+    // Remove tag param if searching
+    if (selectedTag !== 'all') {
+      setSelectedTag('all');
+      router.replace('/movies');
+    }
     fetchMovies();
   };
 
@@ -337,7 +369,16 @@ const MoviesPage = () => {
               </SelectContent>
             </Select>
 
-            <Select value={selectedTag} onValueChange={setSelectedTag}>
+            <Select value={selectedTag} onValueChange={(val) => {
+              if (!val || val === '') return; // Prevent setting empty tag
+              setSelectedTag(val);
+              setCurrentPage(1);
+              if (val !== 'all') {
+                router.replace(`/movies?tag=${encodeURIComponent(val)}`);
+              } else {
+                router.replace('/movies');
+              }
+            }}>
               <SelectTrigger className="text-foreground">
                 <SelectValue placeholder="Tag" className="text-black placeholder:text-muted-foreground" />
               </SelectTrigger>
