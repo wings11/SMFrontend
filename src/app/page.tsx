@@ -398,7 +398,7 @@ export default function HomePage() {
                   size="sm"
                   className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-white text-black hover:bg-gray-100 rounded-full"
                 >
-                  <Search className="w-4 h-4 text-black dark:text-white" />
+                  <Search className="w-4 h-4 text-black dark:text-black" />
                 </Button>
               </div>
             </form>

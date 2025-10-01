@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { useSearchParams } from 'next/navigation';
 import { moviesAPI } from '@/lib/api';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -54,7 +53,6 @@ const MoviesPage = () => {
   const [selectedGenre, setSelectedGenre] = useState<string>('all');
   const [selectedTag, setSelectedTag] = useState<string>('all');
   const router = useRouter();
-  const searchParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
   const [sortBy, setSortBy] = useState<string>('createdAt');
   const [sortOrder, setSortOrder] = useState<string>('desc');
 
@@ -97,23 +95,27 @@ const MoviesPage = () => {
   }, [currentPage, searchQuery, activeTab, selectedGenre, selectedTag, sortBy, sortOrder, limit]);
 
 
-  // On mount, set selectedTag from URL if present
-  // On mount and when URL changes, set selectedTag from URL if present
+  // Sync selectedTag and searchQuery from URL params on mount and when URL changes
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const params = new URLSearchParams(window.location.search);
       const tagParam = params.get('tag');
+      const searchParam = params.get('search') || '';
       // Only update if tagParam is a non-empty string and different from selectedTag
       if (tagParam && tagParam !== selectedTag) {
         setSelectedTag(tagParam);
         setActiveTab('all');
-        setSearchQuery('');
+        setSearchQuery(searchParam);
         setSelectedGenre('all');
         setSortBy('createdAt');
         setSortOrder('desc');
         setCurrentPage(1);
       } else if ((!tagParam || tagParam === 'all') && selectedTag !== 'all') {
         setSelectedTag('all');
+      }
+      // Always update searchQuery if it differs
+      if (searchParam !== searchQuery) {
+        setSearchQuery(searchParam);
       }
     }
     // eslint-disable-next-line
@@ -147,11 +149,13 @@ const MoviesPage = () => {
     e.preventDefault();
     setCurrentPage(1);
     // Remove tag param if searching
-    if (selectedTag !== 'all') {
-      setSelectedTag('all');
-      router.replace('/movies');
-    }
-    fetchMovies();
+    let url = '/movies';
+    const params = [];
+    if (searchQuery) params.push(`search=${encodeURIComponent(searchQuery)}`);
+    if (selectedTag !== 'all') params.push(`tag=${encodeURIComponent(selectedTag)}`);
+    if (params.length > 0) url += '?' + params.join('&');
+    router.replace(url);
+    // fetchMovies(); // No need, useEffect will trigger fetch
   };
 
   const resetFilters = () => {
