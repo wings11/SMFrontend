@@ -45,7 +45,7 @@ export default function TopBanner() {
     // Seed with static placeholders. For dynamic ads, replace with fetch('/api/ads')
     setFeaturedAds([
       // Show the repo GIF (keep full visible and animated). Use encoded space in filename for correct URL.
-      { image: '/ads/sponsor-placeholder.avif', link: '#' },
+      { image: '/ads/sponsor-placeholder.avif', link: 'https://www.youtube.com' },
       // Use provided YouTube URL for banner
       // { video: 'https://youtu.be/e9P6-9-PNXo?si=OkkPSKzJKk8jIqY9', link: '#' }
     ])

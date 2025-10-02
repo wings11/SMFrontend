@@ -171,7 +171,7 @@ const MoviesPage = () => {
   const MovieCard: React.FC<{ movie: Movie }> = ({ movie }) => (
     <Card className="group cursor-pointer transition-all duration-300 hover:shadow-lg hover:scale-105">
       {/* Poster */}
-      <Link href={`/movie/${movie._id}`} className="relative aspect-[2/3] bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-700 overflow-hidden block">
+      <Link href={`/smdrama/${movie._id}`} className="relative aspect-[2/3] bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-700 overflow-hidden block">
         {movie && isLikelyImageUrl(movie.posterUrl) ? (
           <Image
             src={movie.posterUrl!}
@@ -193,7 +193,7 @@ const MoviesPage = () => {
       <CardHeader className="pb-2">
         <div className="flex items-start justify-between">
           <div className="flex-1">
-            <Link href={`/movie/${movie._id}`} className="block hover:text-blue-600 transition-colors">
+            <Link href={`/smdrama/${movie._id}`} className="block hover:text-blue-600 transition-colors">
               <CardTitle className="text-sm md:text-lg line-clamp-2">
                 {movie.title}
               </CardTitle>
@@ -251,7 +251,7 @@ const MoviesPage = () => {
         </div>
 
         <div className="flex gap-2 mt-4">
-          <Link href={`/movie/${movie._id}`}>
+          <Link href={`/smdrama/${movie._id}`}>
             <Button variant="outline" size="sm" className="w-full sm:w-auto">
               Details
             </Button>

@@ -9,7 +9,7 @@ import { Skeleton } from '@/components/ui/skeleton'
 // Carousel removed: featured layout now uses grouped rows of 3
 import { ExpandableText } from '@/components/ui/expandable-text'
 import { ScrollToTop } from '@/components/ui/scroll-to-top'
-import { Star, Calendar, Clock, Play, Search, Film, Tv, ChevronRight, Plus } from 'lucide-react'
+import { Star, Calendar, Search, Film, Tv, ChevronRight, Plus } from 'lucide-react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { isLikelyImageUrl } from '@/lib/imageUtils'
@@ -63,136 +63,75 @@ const MovieCard = ({ movie, featured = false }: { movie: Movie; featured?: boole
 
   if (featured) {
     return (
-      <div className="relative group overflow-hidden rounded-2xl bg-white dark:bg-gray-900 shadow-lg hover:shadow-xl transition-all duration-300">
-        <div className="flex flex-col md:flex-row min-h-[180px] md:min-h-[140px]">
-          {/* Poster Image */}
-          <div className="relative w-full md:w-32 lg:w-40 flex-shrink-0">
-            <div className="aspect-[2/3] md:h-full relative">
-              {isLikelyImageUrl(movie.posterUrl) ? (
-                <Image
-                  src={movie.posterUrl as string}
-                  alt={movie.title}
-                  fill
-                  className="object-cover"
-                  sizes="(max-width: 768px) 100vw, 224px"
-                  priority
-                />
-              ) : (
-                <div className="w-full h-full bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-700 flex items-center justify-center">
-                  <div className="text-center text-gray-400 dark:text-gray-600">
-                    {movie.type === 'movie' ? (
-                      <Film className="w-12 h-12 mx-auto mb-2" />
-                    ) : (
-                      <Tv className="w-12 h-12 mx-auto mb-2" />
-                    )}
-                    <p className="text-sm">No Poster</p>
-                  </div>
+      <Card className="group hover:shadow-xl transition-all duration-300 border-0 bg-white dark:bg-gray-900 overflow-hidden h-full flex flex-col">
+        {/* Poster Image */}
+        <Link href={`/smdrama/${movie._id}`}>
+          <div className="relative aspect-[2/3] bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-700 cursor-pointer">
+            {isLikelyImageUrl(movie.posterUrl) ? (
+              <Image
+                src={movie.posterUrl as string}
+                alt={movie.title}
+                fill
+                className="object-cover transition-transform duration-300 group-hover:scale-105"
+                sizes="(max-width: 768px) 50vw, (max-width: 1200px) 33vw, 25vw"
+                priority
+              />
+            ) : (
+              <div className="absolute inset-0 flex items-center justify-center">
+                <div className="text-center text-gray-400 dark:text-gray-600">
+                  {movie.type === 'movie' ? (
+                    <Film className="w-12 h-12 mx-auto mb-2" />
+                  ) : (
+                    <Tv className="w-12 h-12 mx-auto mb-2" />
+                  )}
+                  <p className="text-sm">No Poster</p>
                 </div>
-              )}
-            </div>
+              </div>
+            )}
             
-            {/* Type Badge */}
-            <div className="absolute top-3 left-3">
-              <Badge 
-                variant={movie.type === 'movie' ? 'default' : 'secondary'} 
-                className="text-xs"
-              >
-                {movie.type === 'movie' ? <Film className="w-3 h-3 mr-1" /> : <Tv className="w-3 h-3 mr-1" />}
-                {movie.type === 'movie' ? 'Movie' : 'Series'}
-              </Badge>
-            </div>
-            
-            {/* Featured Badge */}
-            <div className="absolute top-3 right-3">
-              <Badge className="text-xs bg-[#176DA6] text-white border-0">
+            {/* Overlay badges */}
+            <div className="absolute top-2 left-2">
+              <Badge className="text-xs bg-[#176DA6]/90 backdrop-blur-sm text-white border-0">
                 ⭐ Featured
               </Badge>
             </div>
-          </div>
-          
-          {/* Content */}
-          <div className="flex-1 p-2 md:p-4 flex flex-col justify-between">
-            <div className="space-y-3">
-              {/* Title */}
-              <h3 className="text-lg md:text-xl lg:text-2xl font-bold text-gray-900 dark:text-white leading-tight">
-                {movie.title}
-              </h3>
-              
-              {/* Rating and Year */}
-              <div className="flex items-center gap-4 text-sm">
-                {movie.rating && (
-                  <div className="flex items-center gap-1">
-                    <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
-                    <span className="font-medium text-yellow-600 dark:text-yellow-400">{movie.rating}</span>
-                  </div>
-                )}
-                {movie.year && (
-                  <div className="flex items-center gap-1 text-gray-600 dark:text-gray-400">
-                    <Calendar className="w-4 h-4" />
-                    {movie.year}
-                  </div>
-                )}
-                {movie.duration && (
-                  <div className="flex items-center gap-1 text-gray-600 dark:text-gray-400">
-                    <Clock className="w-4 h-4" />
-                    {movie.duration}
-                  </div>
-                )}
-                {/* Views removed from public UI */}
-              </div>
-              
-              {/* Description */}
-              <ExpandableText
-                text={movie.description}
-                maxLines={2}
-                className="text-gray-700 dark:text-gray-300 text-xs md:text-sm"
-              />
-              
-              {/* Tags/Genres */}
-              <div className="flex flex-wrap gap-2">
-                {movie.genre.slice(0, 4).map((g) => (
-                  <Badge key={g} variant="outline" className="text-xs">
-                    {g}
-                  </Badge>
-                ))}
-                {movie.genre.length > 4 && (
-                  <Badge variant="outline" className="text-xs">
-                    +{movie.genre.length - 4}
-                  </Badge>
-                )}
-              </div>
-            </div>
             
-            {/* Watch Button */}
-            <div className="mt-2 flex gap-2">
-                <Button 
-                  onClick={handleWatchClick}
-                  className="flex-1 bg-gradient-to-r from-[#176DA6] to-[#135685] hover:from-[#135685] hover:to-[#0f4664] text-white border-0 shadow-lg"
-                  size="sm"
-                >
-                  <Play className="w-4 h-4 mr-1 fill-white" />
-                  Watch Now
-                </Button>
-                <Link href={`/movie/${movie._id}`}>
-                  <Button 
-                    variant="outline"
-                    size="sm"
-                    className="border-gray-300 hover:bg-gray-50 dark:border-gray-600 dark:hover:bg-gray-800"
-                  >
-                    View Details
-                  </Button>
-                </Link>
-            </div>
+            {movie.rating && (
+              <div className="absolute top-2 right-2">
+                <Badge className="text-xs bg-yellow-500/90 backdrop-blur-sm text-white border-0">
+                  <Star className="w-3 h-3 mr-1 fill-white" />
+                  {movie.rating}
+                </Badge>
+              </div>
+            )}
           </div>
-        </div>
-      </div>
+        </Link>
+        
+        {/* Content below poster */}
+        <CardContent className="p-3 flex-1">
+          <Link href={`/smdrama/${movie._id}`} className="block group-hover:text-blue-600 transition-colors">
+            <h3 className="font-semibold text-xs sm:text-sm md:text-base leading-tight mb-2 break-words">
+              {movie.title}
+            </h3>
+          </Link>
+          
+          <div className="flex items-center text-xs text-gray-500 dark:text-gray-400">
+            {movie.year && (
+              <span className="flex items-center gap-1">
+                <Calendar className="w-3 h-3" />
+                {movie.year}
+              </span>
+            )}
+          </div>
+        </CardContent>
+      </Card>
     )
   }
 
   return (
     <Card className="group hover:shadow-xl transition-all duration-300 border-0 bg-white dark:bg-gray-900 overflow-hidden h-full flex flex-col">
       {/* Poster Image (clickable, no hover overlay) */}
-      <Link href={`/movie/${movie._id}`}> 
+      <Link href={`/smdrama/${movie._id}`}> 
         <div className="relative aspect-[2/3] bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-700 cursor-pointer">
           {movie.posterUrl ? (
             <Image
@@ -240,7 +179,7 @@ const MovieCard = ({ movie, featured = false }: { movie: Movie; featured?: boole
       </Link>
       {/* Content */}
       <CardContent className="p-3 flex-1">
-        <Link href={`/movie/${movie._id}`} className="block group-hover:text-blue-600 transition-colors">
+        <Link href={`/smdrama/${movie._id}`} className="block group-hover:text-blue-600 transition-colors">
           <h3 className="font-semibold text-sm leading-tight line-clamp-2 mb-2">
             {movie.title}
           </h3>
@@ -419,8 +358,8 @@ export default function HomePage() {
               {/* Mobile horizontal scroll (compact) */}
               <div className="overflow-x-auto no-scrollbar snap-x snap-mandatory -mx-4 px-4 flex gap-3 items-stretch sm:hidden">
                 {featuredMovies.map((movie) => (
-                  <div key={movie._id} className="snap-start w-1/4 flex-shrink-0 h-full">
-                    <MovieCard movie={movie} />
+                  <div key={movie._id} className="snap-start w-1/3 flex-shrink-0 h-full">
+                    <MovieCard movie={movie} featured={true} />
                   </div>
                 ))}
               </div>
@@ -430,7 +369,7 @@ export default function HomePage() {
                 {loading ? (
                   Array.from({ length: 6 }).map((_, i) => <LoadingSkeleton key={i} />)
                 ) : (
-                  featuredMovies.map((movie) => <MovieCard key={movie._id} movie={movie} />)
+                  featuredMovies.map((movie) => <MovieCard key={movie._id} movie={movie} featured={true} />)
                 )}
               </div>
             </section>
@@ -520,14 +459,23 @@ export default function HomePage() {
               </Button>
             </Link>
           </div>
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+          {/* Horizontal scroll layout */}
+          <div className="overflow-x-auto no-scrollbar snap-x snap-mandatory -mx-4 px-4 flex gap-4 items-stretch">
             {loading ? (
-              Array.from({ length: 12 }).map((_, i) => <LoadingSkeleton key={i} />)
+              Array.from({ length: 12 }).map((_, i) => (
+                <div key={i} className="snap-start w-40 sm:w-48 flex-shrink-0 h-full">
+                  <LoadingSkeleton />
+                </div>
+              ))
             ) : (
-              recentMovies.map((movie) => <MovieCard key={movie._id} movie={movie} />)
+              recentMovies.map((movie) => (
+                <div key={movie._id} className="snap-start w-40 sm:w-48 flex-shrink-0 h-full">
+                  <MovieCard movie={movie} />
+                </div>
+              ))
             )}
           </div>
-          <div className="text-center mt-6 sm:hidden">
+          <div className="text-center mt-6">
             <Link href="/movies?sortBy=createdAt&sortOrder=desc">
               <Button variant="outline">
                 View All Recent
@@ -555,7 +503,7 @@ export default function HomePage() {
       {/* Tag-based sections under Recently Added */}
       <div className="container mx-auto px-4 py-8 space-y-12">
         {(() => {
-          const TAGS = ['movie', 'korea drama', 'BL', 'thai series', 'western series', 'variety show']
+          const TAGS = ['movie', 'korea drama', 'LGBT', 'thai series', 'western series', 'variety show']
           return TAGS.map((tag) => {
             const items = tagPool.filter((m) => Array.isArray(m.tags) && m.tags.includes(tag)).slice(0, 6)
             if (items.length === 0) return null
@@ -578,9 +526,12 @@ export default function HomePage() {
                   </Link>
                 </div>
 
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+                {/* Horizontal scroll layout */}
+                <div className="overflow-x-auto no-scrollbar snap-x snap-mandatory -mx-4 px-4 flex gap-4 items-stretch">
                   {items.map((movie) => (
-                    <MovieCard key={movie._id} movie={movie} />
+                    <div key={movie._id} className="snap-start w-40 sm:w-48 flex-shrink-0 h-full">
+                      <MovieCard movie={movie} />
+                    </div>
                   ))}
                 </div>
               </section>

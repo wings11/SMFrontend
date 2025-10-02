@@ -290,7 +290,7 @@ const MovieForm = ({
   }
 
   // Fixed tag options for admin selection
-  const TAG_OPTIONS = ['movie', 'korea drama', 'BL', 'thai series', 'western series', 'variety show'] as const
+  const TAG_OPTIONS = ['movie', 'korea drama', 'LGBT', 'thai series', 'western series', 'variety show'] as const
 
   const handleToggleTag = (tag: string) => {
     setFormData(prev => {
