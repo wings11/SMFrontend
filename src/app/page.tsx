@@ -9,7 +9,7 @@ import { Skeleton } from '@/components/ui/skeleton'
 // Carousel removed: featured layout now uses grouped rows of 3
 import { ExpandableText } from '@/components/ui/expandable-text'
 import { ScrollToTop } from '@/components/ui/scroll-to-top'
-import { Star, Calendar, Clock, Play, TrendingUp, Search, Film, Tv, ChevronRight, Plus } from 'lucide-react'
+import { Star, Calendar, Clock, Play, Search, Film, Tv, ChevronRight, Plus } from 'lucide-react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { isLikelyImageUrl } from '@/lib/imageUtils'
@@ -246,17 +246,13 @@ const MovieCard = ({ movie, featured = false }: { movie: Movie; featured?: boole
           </h3>
         </Link>
         
-        <div className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400 mb-2">
+        <div className="flex items-center text-xs text-gray-500 dark:text-gray-400 mb-2">
           {movie.year && (
             <span className="flex items-center gap-1">
               <Calendar className="w-3 h-3" />
               {movie.year}
             </span>
           )}
-          <span className="flex items-center gap-1">
-            <TrendingUp className="w-3 h-3" />
-            {movie.clickCount.toLocaleString()}
-          </span>
         </div>
         
         <div className="flex flex-wrap gap-1">
