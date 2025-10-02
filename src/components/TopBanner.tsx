@@ -45,7 +45,7 @@ export default function TopBanner() {
     // Seed with static placeholders. For dynamic ads, replace with fetch('/api/ads')
     setFeaturedAds([
       // Show the repo GIF (keep full visible and animated). Use encoded space in filename for correct URL.
-      { image: '/ads/sponsor-placeholder.svg', link: '#' },
+      { image: '/ads/sponsor-placeholder.avif', link: '#' },
       // Use provided YouTube URL for banner
       // { video: 'https://youtu.be/e9P6-9-PNXo?si=OkkPSKzJKk8jIqY9', link: '#' }
     ])
@@ -66,7 +66,7 @@ export default function TopBanner() {
   const ytId = currentAd ? extractYouTubeId(currentAd.video) : null
 
   return (
-    <div className="sticky top-0 z-40 flex justify-center bg-black/80">
+    <div className="top-0 z-40 flex justify-center bg-black/80">
       {currentAd ? (
         // Center a responsive ad container (max 1200px). Reduce height on small devices so banner isn't too large on mobile.
         <div className="w-full max-w-[1200px] h-16 sm:h-28 md:h-44 relative">

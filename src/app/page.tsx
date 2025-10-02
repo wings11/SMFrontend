@@ -419,7 +419,7 @@ export default function HomePage() {
               {/* Mobile horizontal scroll (compact) */}
               <div className="overflow-x-auto no-scrollbar snap-x snap-mandatory -mx-4 px-4 flex gap-3 items-stretch sm:hidden">
                 {featuredMovies.map((movie) => (
-                  <div key={movie._id} className="snap-start w-1/2 flex-shrink-0 h-full">
+                  <div key={movie._id} className="snap-start w-1/4 flex-shrink-0 h-full">
                     <MovieCard movie={movie} />
                   </div>
                 ))}
@@ -462,7 +462,7 @@ export default function HomePage() {
       <div className="container mx-auto px-4 py-8 space-y-12">
         
         {/* More Featured Content */}
-        {featuredMovies.length > 5 && (
+        {/* {featuredMovies.length > 5 && (
           <section>
             <div className="flex items-center justify-between mb-6">
                 <div>
@@ -498,7 +498,7 @@ export default function HomePage() {
               </Link>
             </div>
           </section>
-        )}
+        )} */}
 
         {/* Trending Now removed per request */}
 
@@ -539,7 +539,7 @@ export default function HomePage() {
           <div className="w-full flex justify-center mt-8">
             <div className="w-full max-w-5xl">
               <Image 
-                src="/ads/sponsor-placeholder.svg" 
+                src="/ads/sponsor-placeholder.avif" 
                 alt="Sponsor Ad" 
                 width={1200} 
                 height={180} 
