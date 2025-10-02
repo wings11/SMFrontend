@@ -43,7 +43,7 @@ interface Video {
 
 class MovieFetchService {
   // Extract ID from various URL formats
-  private extractMovieId(url: string): { source: string; id: string } | null {
+  private extractMovieId(url: string): { source: string; id: string; title?: string } | null {
     // IMDb URLs
     const imdbMatch = url.match(/imdb\.com\/title\/(tt\d+)/);
     if (imdbMatch) {
@@ -59,6 +59,40 @@ class MovieFetchService {
     const tmdbTvMatch = url.match(/themoviedb\.org\/tv\/(\d+)/);
     if (tmdbTvMatch) {
       return { source: 'tmdb_tv', id: tmdbTvMatch[1] };
+    }
+
+    // MyDramaList URLs
+    const mdlMatch = url.match(/mydramalist\.com\/(\d+)-([^\/\?]+)/);
+    if (mdlMatch) {
+      return { source: 'mydramalist', id: mdlMatch[1], title: mdlMatch[2].replace(/-/g, ' ') };
+    }
+
+    // HanCinema URLs - matches both old and new URL patterns
+    const hanCinemaMatch = url.match(/hancinema\.net\/([^\/\?]+)(?:\.php)?/);
+    if (hanCinemaMatch) {
+      let extractedTitle = hanCinemaMatch[1];
+      // Remove .php extension if present
+      extractedTitle = extractedTitle.replace(/\.php$/, '');
+      // Extract title from HanCinema patterns like "korean_drama_Title_Name" or "korean_movie_Title"
+      extractedTitle = extractedTitle
+        .replace(/^korean_(drama|movie)_/i, '') // Remove korean_drama_ or korean_movie_ prefix
+        .replace(/_v_/g, ' ') // Replace _v_ with space (for versions)
+        .replace(/_/g, ' ') // Replace remaining underscores with spaces
+        .replace(/-/g, ' '); // Replace hyphens with spaces
+      return { source: 'hancinema', id: hanCinemaMatch[1], title: extractedTitle };
+    }
+
+    // AsianWiki URLs
+    const asianWikiMatch = url.match(/asianwiki\.com\/([^\/\?]+)/);
+    if (asianWikiMatch) {
+      return { source: 'asianwiki', id: asianWikiMatch[1], title: asianWikiMatch[1].replace(/_|-/g, ' ') };
+    }
+
+    // NamuWiki URLs
+    const namuWikiMatch = url.match(/namu\.wiki\/w\/([^\/\?\#]+)/);
+    if (namuWikiMatch) {
+      const decodedTitle = decodeURIComponent(namuWikiMatch[1]).replace(/%20/g, ' ');
+      return { source: 'namuwiki', id: namuWikiMatch[1], title: decodedTitle };
     }
 
     return null;
@@ -168,9 +202,77 @@ class MovieFetchService {
     }
   }
 
+  // Fetch from Asian drama sites using client-side approach
+  private async fetchFromAsianSite(source: string, id: string, title?: string): Promise<MovieDetails | null> {
+    // Since we can't do direct scraping client-side due to CORS, 
+    // we'll extract what we can from the URL and use TMDB search as fallback
+    console.log(`Processing ${source} URL with id: ${id}, title: ${title}`);
+    
+    let extractedTitle = title || id;
+    
+    // Clean up the title for better TMDB search
+    extractedTitle = extractedTitle
+      .replace(/_|-/g, ' ')
+      .replace(/\([^)]*\)/g, '') // Remove parentheses content
+      .replace(/\s+/g, ' ') // Replace multiple spaces with single space
+      .trim();
+
+    // Additional cleaning for specific sources
+    if (source === 'hancinema') {
+      // Remove common HanCinema prefixes and suffixes
+      extractedTitle = extractedTitle
+        .replace(/^korean\s+(drama|movie)\s+/i, '')
+        .replace(/\.php$/i, '')
+        .trim();
+    }
+
+    // Create basic movie data from URL
+    const basicData: MovieDetails = {
+      title: this.formatTitle(extractedTitle),
+      type: 'series', // Most Asian dramas are series
+      genre: source === 'mydramalist' ? ['Drama', 'Romance'] : 
+             source === 'hancinema' ? ['Drama', 'Korean'] :
+             source === 'asianwiki' ? ['Drama', 'Asian'] : ['Drama'],
+      description: `${this.formatTitle(extractedTitle)} - Korean drama from ${source}`,
+      tags: [source, 'asian-drama', source === 'hancinema' ? 'korean' : 'asian'],
+      year: new Date().getFullYear() // Default to current year, will be updated if TMDB search succeeds
+    };
+
+    // Try to enhance with TMDB data
+    if (TMDB_API_KEY) {
+      try {
+        const tmdbResults = await this.searchByTitle(extractedTitle, 'series');
+        if (tmdbResults.length > 0) {
+          const tmdbData = tmdbResults[0];
+          // Merge TMDB data while keeping the original title format
+          return {
+            ...tmdbData,
+            title: basicData.title, // Keep our formatted title
+            tags: [...(tmdbData.tags || []), ...basicData.tags],
+            genre: [...new Set([...tmdbData.genre, ...basicData.genre])] // Combine unique genres
+          };
+        }
+      } catch (error) {
+        console.log('TMDB search failed, using basic data:', error);
+      }
+    }
+
+    return basicData;
+  }
+
+  // Format title for better display
+  private formatTitle(title: string): string {
+    return title
+      .split(' ')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+      .join(' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+  }
+
   // Demo data for testing without API keys
   private getDemoData(id: string, type?: 'movie' | 'tv'): MovieDetails {
-    // Sample data based on common movies/series
+    // Sample data based on common movies/series and Asian dramas
     // Note: Using IMDb-style posters for demo to simulate OMDb response
     const demos = {
       'tt0111161': {
@@ -181,7 +283,7 @@ class MovieFetchService {
         imdbRating: 9.3,
         tmdbRating: 8.7,
         type: 'movie' as const,
-        posterUrl: 'https://m.media-amazon.com/images/M/MV5BNDE3ODcxYzMtY2YzZC00NmNlLWJiNDMtZDViZWM2MzIxZDYwXkEyXkFqcGdeQXVyNjAwNDUxODI@._V1_SX300.jpg', // IMDb poster
+        posterUrl: 'https://m.media-amazon.com/images/M/MV5BNDE3ODcxYzMtY2YzZC00NmNlLWJiNDMtZDViZWM2MzIxZDYwXkEyXkFqcGdeQXVyNjAwNDUxODI@._V1_SX300.jpg',
         trailerUrl: 'https://www.youtube.com/watch?v=NmzuHjWmXOc',
         backdropUrl: 'https://image.tmdb.org/t/p/w1280/l6hQWH9eDksNJNiXWYRkWqikOdu.jpg',
         tags: ['drama', 'crime', 'hope']
@@ -195,10 +297,47 @@ class MovieFetchService {
         tmdbRating: 8.9,
         type: 'series' as const,
         seasons: 5,
-        posterUrl: 'https://m.media-amazon.com/images/M/MV5BYmQ4YWMxYjUtNjZmYi00MDQ1LWFjMjMtNjA5ZDdiYjdiODU5XkEyXkFqcGdeQXVyMTMzNDExODE5._V1_SX300.jpg', // IMDb poster
+        posterUrl: 'https://m.media-amazon.com/images/M/MV5BYmQ4YWMxYjUtNjZmYi00MDQ1LWFjMjMtNjA5ZDdiYjdiODU5XkEyXkFqcGdeQXVyMTMzNDExODE5._V1_SX300.jpg',
         trailerUrl: 'https://www.youtube.com/watch?v=HhesaQXLuRY',
         backdropUrl: 'https://image.tmdb.org/t/p/w1280/iNOGKhqMEwQ2CZdnp67eKp6nIJ8.jpg',
         tags: ['crime', 'drama', 'thriller']
+      },
+      // Asian drama samples for testing
+      'crash-landing-on-you': {
+        title: 'Crash Landing on You',
+        year: 2019,
+        genre: ['Drama', 'Romance', 'Comedy'],
+        description: 'A South Korean heiress accidentally paraglides into North Korea and falls in love with a North Korean officer.',
+        tmdbRating: 8.7,
+        type: 'series' as const,
+        seasons: 1,
+        posterUrl: 'https://image.tmdb.org/t/p/w500/g7ygQMmVpJ9U8K4Nm7qvMhMLCNG.jpg',
+        trailerUrl: 'https://www.youtube.com/watch?v=GVQGWgeVc4k',
+        tags: ['kdrama', 'romance', 'comedy', 'north-korea']
+      },
+      'squid-game': {
+        title: 'Squid Game',
+        year: 2021,
+        genre: ['Thriller', 'Drama', 'Mystery'],
+        description: 'Hundreds of cash-strapped contestants accept an invitation to compete in deadly children\'s games for a multi-billion-won prize.',
+        tmdbRating: 8.0,
+        type: 'series' as const,
+        seasons: 1,
+        posterUrl: 'https://image.tmdb.org/t/p/w500/dDlEmu3EZ0Pgg93K2SVNLCjCSvE.jpg',
+        trailerUrl: 'https://www.youtube.com/watch?v=oqxAJKy0ii4',
+        tags: ['kdrama', 'thriller', 'survival', 'korean']
+      },
+      // HanCinema demo
+      'korean_drama_Bon_Appetit_v__Your_Majesty.php': {
+        title: 'Bon Appetit Your Majesty',
+        year: 2023,
+        genre: ['Drama', 'Comedy', 'Romance'],
+        description: 'A romantic comedy about cooking and royalty.',
+        tmdbRating: 7.5,
+        type: 'series' as const,
+        seasons: 1,
+        posterUrl: 'https://image.tmdb.org/t/p/w500/sample-kdrama.jpg',
+        tags: ['kdrama', 'romance', 'comedy', 'cooking', 'hancinema']
       }
     };
 
@@ -300,7 +439,7 @@ class MovieFetchService {
   async fetchMovieDetails(url: string): Promise<MovieDetails | null> {
     const extracted = this.extractMovieId(url);
     if (!extracted) {
-      throw new Error('Invalid URL. Please provide a valid IMDb or TMDB URL.');
+      throw new Error('Invalid URL. Please provide a valid IMDb, TMDB, MyDramaList, HanCinema, AsianWiki, or NamuWiki URL.');
     }
 
     let movieData: MovieDetails | null = null;
@@ -350,6 +489,14 @@ class MovieFetchService {
           const imdbRating = await this.getIMDbRatingForTMDB(extracted.id, 'tv');
           if (imdbRating) movieData.imdbRating = imdbRating;
         }
+        break;
+
+      case 'mydramalist':
+      case 'hancinema':
+      case 'asianwiki':
+      case 'namuwiki':
+        // Handle Asian drama sites
+        movieData = await this.fetchFromAsianSite(extracted.source, extracted.id, extracted.title);
         break;
     }
 
