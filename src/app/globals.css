@@ -385,4 +385,32 @@
     animation: pulse-hint 2s ease-in-out infinite;
     animation-delay: 3s;
   }
+  
+  /* Mobile View All button styles */
+  @media (max-width: 640px) {
+    .mobile-view-all {
+      transition: all 0.3s ease;
+      background: linear-gradient(135deg, rgba(23, 109, 166, 0.1), rgba(23, 109, 166, 0.05));
+      border: 1px solid rgba(23, 109, 166, 0.3);
+    }
+    
+    .mobile-view-all:hover {
+      background: linear-gradient(135deg, rgba(23, 109, 166, 0.2), rgba(23, 109, 166, 0.1));
+      border-color: rgba(23, 109, 166, 0.5);
+      transform: translateY(-1px);
+    }
+    
+    .mobile-view-all:active {
+      transform: translateY(0);
+    }
+  }
+  
+  /* Reset mobile styles for desktop */
+  @media (min-width: 641px) {
+    .mobile-view-all-reset {
+      background: transparent !important;
+      border: 1px solid hsl(var(--border)) !important;
+      transform: none !important;
+    }
+  }
 }

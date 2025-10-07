@@ -25,3 +25,22 @@ export function isLikelyImageUrl(url?: string | null): boolean {
     return /\.(jpg|jpeg|png|webp|gif|avif|svg)$/i.test(trimmed)
   }
 }
+
+export function getImageSrcWithFallback(posterUrl?: string | null): string {
+  if (!posterUrl || !isLikelyImageUrl(posterUrl)) {
+    return '/placeholder-movie.svg'
+  }
+  return posterUrl
+}
+
+export function shouldUnoptimizeImage(url?: string | null): boolean {
+  if (!url) return false
+  // List of domains that might have issues with Next.js optimization
+  const problematicDomains = [
+    'm.media-amazon.com',
+    'asianwiki.com',
+    'www.google.com',
+    'encrypted-tbn0.gstatic.com'
+  ]
+  return problematicDomains.some(domain => url.includes(domain))
+}

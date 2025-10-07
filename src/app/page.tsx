@@ -9,10 +9,10 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { useMouseDrag } from '@/hooks/useMouseDrag'
 // Carousel removed: featured layout now uses grouped rows of 3
 import { ScrollToTop } from '@/components/ui/scroll-to-top'
-import { Star, Calendar, Search, Film, Tv, ChevronRight, ChevronLeft, Plus } from 'lucide-react'
+import { Star, Calendar, Search, Film, ChevronRight, ChevronLeft, Plus } from 'lucide-react'
 import Link from 'next/link'
 import Image from 'next/image'
-import { isLikelyImageUrl } from '@/lib/imageUtils'
+import { MovieImage } from '@/components/ui/movie-image'
 import { moviesAPI } from '@/lib/api'
 
 interface Movie {
@@ -46,27 +46,14 @@ const MovieCard = ({ movie, featured = false }: { movie: Movie; featured?: boole
         {/* Poster Image */}
         <Link href={`/smdrama/${movie._id}`}>
           <div className="relative aspect-[2/3] bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-700 cursor-pointer">
-            {isLikelyImageUrl(movie.posterUrl) ? (
-              <Image
-                src={movie.posterUrl as string}
-                alt={movie.title}
-                fill
-                className="object-cover transition-transform duration-300 group-hover:scale-105"
-                sizes="(max-width: 768px) 50vw, (max-width: 1200px) 33vw, 25vw"
-                priority
-              />
-            ) : (
-              <div className="absolute inset-0 flex items-center justify-center">
-                <div className="text-center text-gray-400 dark:text-gray-600">
-                  {movie.type === 'movie' ? (
-                    <Film className="w-12 h-12 mx-auto mb-2" />
-                  ) : (
-                    <Tv className="w-12 h-12 mx-auto mb-2" />
-                  )}
-                  <p className="text-sm">No Poster</p>
-                </div>
-              </div>
-            )}
+            <MovieImage
+              src={movie.posterUrl}
+              alt={movie.title}
+              fill
+              className="object-cover transition-transform duration-300 group-hover:scale-105"
+              sizes="(max-width: 768px) 50vw, (max-width: 1200px) 33vw, 25vw"
+              priority
+            />
             
             {/* Overlay badges */}
             <div className="absolute top-2 left-2">
@@ -112,26 +99,14 @@ const MovieCard = ({ movie, featured = false }: { movie: Movie; featured?: boole
       {/* Poster Image (clickable, no hover overlay) */}
       <Link href={`/smdrama/${movie._id}`}> 
         <div className="relative aspect-[2/3] bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-700 cursor-pointer">
-          {movie.posterUrl ? (
-            <Image
-              src={isLikelyImageUrl(movie.posterUrl) ? movie.posterUrl! : '/placeholder-movie.svg'}
-              alt={movie.title}
-              fill
-              className="object-cover transition-transform duration-300 group-hover:scale-105"
-              sizes="(max-width: 768px) 50vw, (max-width: 1200px) 33vw, 25vw"
-            />
-          ) : (
-            <div className="absolute inset-0 flex items-center justify-center">
-              <div className="text-center text-gray-400 dark:text-gray-600">
-                {movie.type === 'movie' ? (
-                  <Film className="w-12 h-12 mx-auto mb-2" />
-                ) : (
-                  <Tv className="w-12 h-12 mx-auto mb-2" />
-                )}
-                <p className="text-sm">No Poster</p>
-              </div>
-            </div>
-          )}
+          <MovieImage
+            src={movie.posterUrl}
+            alt={movie.title}
+            fill
+            className="object-cover transition-transform duration-300 group-hover:scale-105"
+            sizes="(max-width: 768px) 50vw, (max-width: 1200px) 33vw, 25vw"
+          />
+
           {/* Overlay badges */}
           <div className="absolute top-2 left-2 flex flex-col gap-1">
             <Badge 
@@ -356,9 +331,10 @@ export default function HomePage() {
                   <p className="text-sm text-gray-600 dark:text-gray-400">Top picks for you</p>
                 </div>
                 <Link href="/movies?featured=true">
-                  <Button variant="outline" className="hidden sm:flex">
-                    View All
-                    <ChevronRight className="w-4 h-4 ml-2" />
+                  <Button variant="outline" className="text-xs sm:text-sm px-2 py-1 sm:px-4 sm:py-2 h-8 sm:h-10">
+                    <span className="hidden sm:inline">View All</span>
+                    <span className="sm:hidden">All</span>
+                    <ChevronRight className="w-3 h-3 sm:w-4 sm:h-4 ml-1 sm:ml-2" />
                   </Button>
                 </Link>
               </div>
@@ -401,6 +377,16 @@ export default function HomePage() {
                 ) : (
                   featuredMovies.map((movie) => <MovieCard key={movie._id} movie={movie} featured={true} />)
                 )}
+              </div>
+              
+              {/* Mobile View All button */}
+              <div className="text-center mt-4 sm:hidden">
+                <Link href="/movies?featured=true">
+                  <Button variant="outline" size="sm" className="w-full max-w-xs mobile-view-all">
+                    View All Featured
+                    <ChevronRight className="w-4 h-4 ml-2" />
+                  </Button>
+                </Link>
               </div>
             </section>
           )}
@@ -483,9 +469,10 @@ export default function HomePage() {
               </p>
             </div>
             <Link href="/movies?sortBy=createdAt&sortOrder=desc">
-              <Button variant="outline" className="hidden sm:flex">
-                View All
-                <ChevronRight className="w-4 h-4 ml-2" />
+              <Button variant="outline" className="text-xs sm:text-sm px-2 py-1 sm:px-4 sm:py-2 h-8 sm:h-10">
+                <span className="hidden sm:inline">View All</span>
+                <span className="sm:hidden">All</span>
+                <ChevronRight className="w-3 h-3 sm:w-4 sm:h-4 ml-1 sm:ml-2" />
               </Button>
             </Link>
           </div>
@@ -533,7 +520,7 @@ export default function HomePage() {
           </div>
           <div className="text-center mt-6">
             <Link href="/movies?sortBy=createdAt&sortOrder=desc">
-              <Button variant="outline">
+              <Button variant="outline" className="w-full max-w-xs sm:w-auto mobile-view-all sm:mobile-view-all-reset">
                 View All Recent
                 <ChevronRight className="w-4 h-4 ml-2" />
               </Button>
@@ -575,9 +562,10 @@ export default function HomePage() {
                     <p className="text-gray-600 dark:text-gray-400">{`Latest ${tag} content`}</p>
                   </div>
                   <Link href={`/movies?tag=${encodeURIComponent(tag)}`} prefetch={false}>
-                    <Button variant="outline" className="hidden sm:flex">
-                      View All
-                      <ChevronRight className="w-4 h-4 ml-2" />
+                    <Button variant="outline" className="text-xs sm:text-sm px-2 py-1 sm:px-4 sm:py-2 h-8 sm:h-10">
+                      <span className="hidden sm:inline">View All</span>
+                      <span className="sm:hidden">All</span>
+                      <ChevronRight className="w-3 h-3 sm:w-4 sm:h-4 ml-1 sm:ml-2" />
                     </Button>
                   </Link>
                 </div>
@@ -615,6 +603,16 @@ export default function HomePage() {
                       </Button>
                     </>
                   )}
+                </div>
+                
+                {/* Mobile View All button */}
+                <div className="text-center mt-4 sm:hidden">
+                  <Link href={`/movies?tag=${encodeURIComponent(tag)}`} prefetch={false}>
+                    <Button variant="outline" size="sm" className="w-full max-w-xs mobile-view-all">
+                      View All {tag.charAt(0).toUpperCase() + tag.slice(1)}
+                      <ChevronRight className="w-4 h-4 ml-2" />
+                    </Button>
+                  </Link>
                 </div>
               </section>
             )
