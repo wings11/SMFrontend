@@ -6,10 +6,10 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
 import { Skeleton } from '@/components/ui/skeleton'
+import { useMouseDrag } from '@/hooks/useMouseDrag'
 // Carousel removed: featured layout now uses grouped rows of 3
-import { ExpandableText } from '@/components/ui/expandable-text'
 import { ScrollToTop } from '@/components/ui/scroll-to-top'
-import { Star, Calendar, Search, Film, Tv, ChevronRight, Plus } from 'lucide-react'
+import { Star, Calendar, Search, Film, Tv, ChevronRight, ChevronLeft, Plus } from 'lucide-react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { isLikelyImageUrl } from '@/lib/imageUtils'
@@ -39,31 +39,10 @@ interface Movie {
 }
 
 const MovieCard = ({ movie, featured = false }: { movie: Movie; featured?: boolean }) => {
-  const handleWatchClick = async () => {
-    try {
-      // Open a blank window synchronously to ensure mobile/Safari treat this as a user-initiated navigation
-      const win = window.open('', '_blank')
-      const response = await moviesAPI.clickMovie(movie._id)
-      if (response.success && response.telegramLink) {
-        if (win) {
-          // navigate the pre-opened window to the telegram link
-          win.location.href = response.telegramLink
-        } else {
-          // fallback if the window failed to open
-          window.location.href = response.telegramLink
-        }
-      } else {
-        // Close the blank window if no link returned
-        if (win) win.close()
-      }
-    } catch (error) {
-      console.error('Error getting telegram link:', error)
-    }
-  }
 
   if (featured) {
     return (
-      <Card className="group hover:shadow-xl transition-all duration-300 border-0 bg-white dark:bg-gray-900 overflow-hidden h-full flex flex-col">
+      <Card className="movie-card group hover:shadow-xl transition-all duration-300 border-0 bg-white dark:bg-gray-900 overflow-hidden h-full flex flex-col">
         {/* Poster Image */}
         <Link href={`/smdrama/${movie._id}`}>
           <div className="relative aspect-[2/3] bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-700 cursor-pointer">
@@ -129,7 +108,7 @@ const MovieCard = ({ movie, featured = false }: { movie: Movie; featured?: boole
   }
 
   return (
-    <Card className="group hover:shadow-xl transition-all duration-300 border-0 bg-white dark:bg-gray-900 overflow-hidden h-full flex flex-col">
+    <Card className="movie-card group hover:shadow-xl transition-all duration-300 border-0 bg-white dark:bg-gray-900 overflow-hidden h-full flex flex-col">
       {/* Poster Image (clickable, no hover overlay) */}
       <Link href={`/smdrama/${movie._id}`}> 
         <div className="relative aspect-[2/3] bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-700 cursor-pointer">
@@ -258,6 +237,35 @@ export default function HomePage() {
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
 
+  // Mouse drag hooks for horizontal scrolling
+  const featuredScrollRef = useMouseDrag()
+  const recentScrollRef = useMouseDrag()
+  
+  // Create individual drag refs for each tag section
+  const tagScrollRefs = {
+    'movie': useMouseDrag(),
+    'korea drama': useMouseDrag(),
+    'LGBT': useMouseDrag(),
+    'thai series': useMouseDrag(),
+    'western series': useMouseDrag(),
+    'variety show': useMouseDrag()
+  }
+
+  // Scroll functions for navigation arrows
+  const scrollLeft = (ref: React.RefObject<HTMLDivElement | null>) => {
+    if (ref.current) {
+      const scrollAmount = ref.current.clientWidth * 0.75 // Scroll 75% of visible width for better control
+      ref.current.scrollBy({ left: -scrollAmount, behavior: 'smooth' })
+    }
+  }
+
+  const scrollRight = (ref: React.RefObject<HTMLDivElement | null>) => {
+    if (ref.current) {
+      const scrollAmount = ref.current.clientWidth * 0.75 // Scroll 75% of visible width for better control
+      ref.current.scrollBy({ left: scrollAmount, behavior: 'smooth' })
+    }
+  }
+
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -267,7 +275,7 @@ export default function HomePage() {
         const [featured, recent, pool] = await Promise.all([
           moviesAPI.getFeatured(8),
           moviesAPI.getMovies({ limit: 12, sortBy: 'lastEpisodeAt', sortOrder: 'desc' }),
-          moviesAPI.getMovies({ limit: 60, sortBy: 'createdAt', sortOrder: 'desc' })
+          moviesAPI.getMovies({ limit: 200, sortBy: 'createdAt', sortOrder: 'desc' })
         ])
 
         console.log('Featured movies response:', featured)
@@ -356,12 +364,34 @@ export default function HomePage() {
               </div>
 
               {/* Mobile horizontal scroll (compact) */}
-              <div className="overflow-x-auto no-scrollbar snap-x snap-mandatory -mx-4 px-4 flex gap-3 items-stretch sm:hidden">
-                {featuredMovies.map((movie) => (
-                  <div key={movie._id} className="snap-start w-1/3 flex-shrink-0 h-full">
-                    <MovieCard movie={movie} featured={true} />
-                  </div>
-                ))}
+              <div className="relative sm:hidden scroll-section">
+                <div 
+                  ref={featuredScrollRef}
+                  className="overflow-x-auto no-scrollbar snap-x snap-proximity -mx-4 px-4 flex gap-3 items-stretch"
+                >
+                  {featuredMovies.map((movie) => (
+                    <div key={movie._id} className="snap-start w-1/3 flex-shrink-0 h-full">
+                      <MovieCard movie={movie} featured={true} />
+                    </div>
+                  ))}
+                </div>
+                {/* Navigation arrows - hidden on mobile */}
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="scroll-nav-arrow absolute left-2 top-1/2 -translate-y-1/2 z-10 bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm border-gray-200/50 hover:bg-white dark:hover:bg-gray-900 shadow-lg hidden md:flex"
+                  onClick={() => scrollLeft(featuredScrollRef)}
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="scroll-nav-arrow absolute right-2 top-1/2 -translate-y-1/2 z-10 bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm border-gray-200/50 hover:bg-white dark:hover:bg-gray-900 shadow-lg hidden md:flex"
+                  onClick={() => scrollRight(featuredScrollRef)}
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
               </div>
 
               {/* Desktop grid for larger screens */}
@@ -460,19 +490,45 @@ export default function HomePage() {
             </Link>
           </div>
           {/* Horizontal scroll layout */}
-          <div className="overflow-x-auto no-scrollbar snap-x snap-mandatory -mx-4 px-4 flex gap-4 items-stretch">
-            {loading ? (
-              Array.from({ length: 12 }).map((_, i) => (
-                <div key={i} className="snap-start w-40 sm:w-48 flex-shrink-0 h-full">
-                  <LoadingSkeleton />
-                </div>
-              ))
-            ) : (
-              recentMovies.map((movie) => (
-                <div key={movie._id} className="snap-start w-40 sm:w-48 flex-shrink-0 h-full">
-                  <MovieCard movie={movie} />
-                </div>
-              ))
+          <div className="relative scroll-section">
+            <div 
+              ref={recentScrollRef}
+              className="overflow-x-auto no-scrollbar snap-x snap-proximity -mx-4 px-4 flex gap-4 items-stretch"
+            >
+              {loading ? (
+                Array.from({ length: 12 }).map((_, i) => (
+                  <div key={i} className="snap-start w-40 sm:w-48 flex-shrink-0 h-full">
+                    <LoadingSkeleton />
+                  </div>
+                ))
+              ) : (
+                recentMovies.map((movie) => (
+                  <div key={movie._id} className="snap-start w-40 sm:w-48 flex-shrink-0 h-full">
+                    <MovieCard movie={movie} />
+                  </div>
+                ))
+              )}
+            </div>
+            {/* Navigation arrows - hidden on mobile */}
+            {!loading && recentMovies.length > 0 && (
+              <>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="scroll-nav-arrow absolute left-2 top-1/2 -translate-y-1/2 z-10 bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm border-gray-200/50 hover:bg-white dark:hover:bg-gray-900 shadow-lg hidden md:flex"
+                  onClick={() => scrollLeft(recentScrollRef)}
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="scroll-nav-arrow absolute right-2 top-1/2 -translate-y-1/2 z-10 bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm border-gray-200/50 hover:bg-white dark:hover:bg-gray-900 shadow-lg hidden md:flex"
+                  onClick={() => scrollRight(recentScrollRef)}
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </>
             )}
           </div>
           <div className="text-center mt-6">
@@ -505,7 +561,7 @@ export default function HomePage() {
         {(() => {
           const TAGS = ['movie', 'korea drama', 'LGBT', 'thai series', 'western series', 'variety show']
           return TAGS.map((tag) => {
-            const items = tagPool.filter((m) => Array.isArray(m.tags) && m.tags.includes(tag)).slice(0, 6)
+            const items = tagPool.filter((m) => Array.isArray(m.tags) && m.tags.includes(tag)).slice(0, 12)
             if (items.length === 0) return null
             return (
               <section key={tag}>
@@ -518,7 +574,7 @@ export default function HomePage() {
                     </Link>
                     <p className="text-gray-600 dark:text-gray-400">{`Latest ${tag} content`}</p>
                   </div>
-                  <Link href={`/movies?search=${encodeURIComponent(tag)}`}>
+                  <Link href={`/movies?tag=${encodeURIComponent(tag)}`} prefetch={false}>
                     <Button variant="outline" className="hidden sm:flex">
                       View All
                       <ChevronRight className="w-4 h-4 ml-2" />
@@ -527,12 +583,38 @@ export default function HomePage() {
                 </div>
 
                 {/* Horizontal scroll layout */}
-                <div className="overflow-x-auto no-scrollbar snap-x snap-mandatory -mx-4 px-4 flex gap-4 items-stretch">
-                  {items.map((movie) => (
-                    <div key={movie._id} className="snap-start w-40 sm:w-48 flex-shrink-0 h-full">
-                      <MovieCard movie={movie} />
-                    </div>
-                  ))}
+                <div className="relative scroll-section">
+                  <div 
+                    ref={tagScrollRefs[tag as keyof typeof tagScrollRefs]}
+                    className="overflow-x-auto no-scrollbar snap-x snap-proximity -mx-4 px-4 flex gap-4 items-stretch"
+                  >
+                    {items.map((movie) => (
+                      <div key={movie._id} className="snap-start w-40 sm:w-48 flex-shrink-0 h-full">
+                        <MovieCard movie={movie} />
+                      </div>
+                    ))}
+                  </div>
+                  {/* Navigation arrows - hidden on mobile */}
+                  {items.length > 0 && (
+                    <>
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        className="scroll-nav-arrow absolute left-2 top-1/2 -translate-y-1/2 z-10 bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm border-gray-200/50 hover:bg-white dark:hover:bg-gray-900 shadow-lg hidden md:flex"
+                        onClick={() => scrollLeft(tagScrollRefs[tag as keyof typeof tagScrollRefs])}
+                      >
+                        <ChevronLeft className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        className="scroll-nav-arrow absolute right-2 top-1/2 -translate-y-1/2 z-10 bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm border-gray-200/50 hover:bg-white dark:hover:bg-gray-900 shadow-lg hidden md:flex"
+                        onClick={() => scrollRight(tagScrollRefs[tag as keyof typeof tagScrollRefs])}
+                      >
+                        <ChevronRight className="h-4 w-4" />
+                      </Button>
+                    </>
+                  )}
                 </div>
               </section>
             )

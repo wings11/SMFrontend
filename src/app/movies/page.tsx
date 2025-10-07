@@ -77,18 +77,59 @@ const MoviesPage = () => {
         sortOrder,
       };
 
-      if (searchQuery) params.search = searchQuery;
-      if (activeTab !== 'all') params.type = activeTab;
-      if (selectedGenre !== 'all') params.genre = selectedGenre;
-      if (selectedTag !== 'all') params.tag = selectedTag;
+      // Only add optional params if they have values
+      if (searchQuery && searchQuery.trim()) params.search = searchQuery.trim();
+      if (activeTab && activeTab !== 'all') params.type = activeTab;
+      if (selectedGenre && selectedGenre !== 'all') params.genre = selectedGenre;
+      if (selectedTag && selectedTag !== 'all') params.tag = selectedTag;
+      
+      console.log('fetchMovies called with filters:', {
+        hasSearch: !!searchQuery,
+        activeTab,
+        selectedGenre,
+        selectedTag,
+        currentPage
+      });
 
+      console.log('Fetching movies with params:', params);
       const response = await moviesAPI.getMovies(params);
-      setMovies(response.data);
-      setCurrentPage(response.currentPage);
-      setTotalPages(response.totalPages);
-      setTotalMovies(response.total);
+      console.log('Movies API response:', response);
+      
+      if (response && response.data) {
+        setMovies(response.data);
+        
+        // Get pagination data from response (backend returns it in pagination object)
+        const paginationData = response.pagination || {};
+        const totalCount = paginationData.totalItems || response.total || response.data.length;
+        const backendTotalPages = paginationData.totalPages || response.totalPages || Math.ceil(totalCount / limit);
+        const currentPageFromResponse = paginationData.currentPage || response.currentPage || params.page;
+        
+        setCurrentPage(currentPageFromResponse);
+        setTotalPages(backendTotalPages);
+        setTotalMovies(totalCount);
+        
+        console.log('Pagination debug:', {
+          responseStructure: Object.keys(response),
+          paginationData,
+          totalCount,
+          backendTotalPages,
+          currentPageFromResponse,
+          dataLength: response.data.length
+        });
+      } else {
+        console.warn('Invalid response structure:', response);
+        setMovies([]);
+        setCurrentPage(1);
+        setTotalPages(1);
+        setTotalMovies(0);
+      }
     } catch (error) {
       console.error('Error fetching movies:', error);
+      // Reset to safe defaults on error
+      setMovies([]);
+      setCurrentPage(1);
+      setTotalPages(1);
+      setTotalMovies(0);
     } finally {
       setLoading(false);
     }
@@ -122,8 +163,59 @@ const MoviesPage = () => {
   }, [typeof window !== 'undefined' ? window.location.search : '']);
 
   useEffect(() => {
+    console.log('Movies page: calling fetchMovies');
     fetchMovies();
   }, [fetchMovies, selectedTag]);
+
+  // Scroll to top when page changes
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, [currentPage]);
+
+  // Initial load on mount - force load all movies with pagination
+  useEffect(() => {
+    console.log('Movies page: Initial mount - loading all movies');
+    const initialLoad = async () => {
+      setLoading(true);
+      try {
+        // Force fetch all movies with explicit pagination
+        const response = await moviesAPI.getMovies({
+          page: 1,
+          limit: 12,
+          sortBy: 'createdAt',
+          sortOrder: 'desc'
+        });
+        
+        console.log('Initial load response:', response);
+        
+        if (response && response.data) {
+          setMovies(response.data);
+          setCurrentPage(1);
+          
+          // Ensure we have proper pagination data
+          const totalCount = response.total || response.data.length;
+          const calculatedPages = Math.ceil(totalCount / 12);
+          
+          // Force minimum pagination if we have content
+          if (totalCount > 12) {
+            setTotalPages(Math.max(calculatedPages, 2));
+          } else {
+            setTotalPages(1);
+          }
+          
+          setTotalMovies(totalCount);
+          
+          console.log(`Initial load: ${response.data.length} movies, Total: ${totalCount}, Pages: ${calculatedPages}`);
+        }
+      } catch (error) {
+        console.error('Initial load failed:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    initialLoad();
+  }, []); // Only run once on mount
 
   // Fetch available filter options
   useEffect(() => {
@@ -459,50 +551,87 @@ const MoviesPage = () => {
         </div>
       ) : (
         <>
+          {/* Results info */}
+          <div className="flex justify-between items-center mb-4 text-sm text-muted-foreground">
+            <span>
+              Showing {movies.length} of {totalMovies} results
+              {currentPage > 1 && ` (Page ${currentPage} of ${totalPages})`}
+            </span>
+            {totalPages > 1 && (
+              <span>
+                {limit} per page
+              </span>
+            )}
+          </div>
+
           <div className="grid gap-6 grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 mb-8">
             {movies.map((movie) => (
               <MovieCard key={movie._id} movie={movie} />
             ))}
           </div>
 
-          {/* Pagination */}
+          {/* Pagination - Always show if there are multiple pages */}
           {totalPages > 1 && (
-            <div className="flex justify-center items-center space-x-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-                disabled={currentPage === 1}
-              >
-                <ChevronLeft className="h-4 w-4" />
-                Previous
-              </Button>
-              
-              <div className="flex space-x-1">
-                {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                  const page = i + 1;
-                  return (
-                    <Button
-                      key={page}
-                      variant={currentPage === page ? "default" : "outline"}
-                      size="sm"
-                      onClick={() => setCurrentPage(page)}
-                    >
-                      {page}
-                    </Button>
-                  );
-                })}
-              </div>
+            <div className="mt-8 border-t pt-6">
+              <div className="flex justify-center items-center space-x-2 mb-4">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                  disabled={currentPage === 1}
+                  className="px-3"
+                >
+                  <ChevronLeft className="h-4 w-4 mr-1" />
+                  Previous
+                </Button>
+                
+                <div className="flex space-x-1">
+                  {Array.from({ length: totalPages }, (_, i) => {
+                    const page = i + 1;
+                    // Show first page, last page, current page, and 2 pages around current
+                    const shouldShow = 
+                      page === 1 || 
+                      page === totalPages || 
+                      Math.abs(page - currentPage) <= 2;
+                    
+                    if (!shouldShow) {
+                      // Show ellipsis if there's a gap
+                      if (page === currentPage - 3 || page === currentPage + 3) {
+                        return <span key={page} className="px-2 text-muted-foreground">...</span>;
+                      }
+                      return null;
+                    }
+                    
+                    return (
+                      <Button
+                        key={page}
+                        variant={currentPage === page ? "default" : "outline"}
+                        size="sm"
+                        onClick={() => setCurrentPage(page)}
+                        className="min-w-[40px]"
+                      >
+                        {page}
+                      </Button>
+                    );
+                  })}
+                </div>
 
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-                disabled={currentPage === totalPages}
-              >
-                Next
-                <ChevronRight className="h-4 w-4" />
-              </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                  disabled={currentPage === totalPages}
+                  className="px-3"
+                >
+                  Next
+                  <ChevronRight className="h-4 w-4 ml-1" />
+                </Button>
+              </div>
+              
+              {/* Page info */}
+              <div className="text-center text-sm text-muted-foreground">
+                Page {currentPage} of {totalPages} • {totalMovies} total items
+              </div>
             </div>
           )}
         </>

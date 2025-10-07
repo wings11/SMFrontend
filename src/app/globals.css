@@ -220,4 +220,169 @@
   .no-scrollbar::-webkit-scrollbar {
     display: none; /* Chrome, Safari, Opera */
   }
+  
+  /* Draggable scroll container styles */
+  .draggable-scroll {
+    cursor: grab;
+    user-select: none;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    scroll-behavior: smooth;
+    -webkit-overflow-scrolling: touch; /* Better mobile scrolling */
+  }
+  
+  .draggable-scroll:active {
+    cursor: grabbing;
+  }
+  
+  .draggable-scroll * {
+    pointer-events: auto;
+  }
+  
+  /* Smooth scrolling for desktop drag */
+  .smooth-scroll {
+    scroll-behavior: smooth;
+  }
+  
+  /* Enhanced card interaction for drag containers */
+  .drag-container .movie-card {
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), 
+                box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    will-change: transform;
+  }
+  
+  .drag-container:not(.dragging) .movie-card:hover {
+    transform: translateY(-4px) scale(1.02);
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+  }
+  
+  .drag-container.dragging .movie-card {
+    transform: none;
+    transition: none; /* Disable transitions during drag for better performance */
+  }
+  
+  /* Prevent text selection during drag */
+  .dragging {
+    user-select: none !important;
+    -webkit-user-select: none !important;
+    -moz-user-select: none !important;
+    -ms-user-select: none !important;
+    scroll-behavior: auto !important; /* Immediate response during drag */
+  }
+  
+  /* Momentum scrolling indicator */
+  .drag-container::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    right: 8px;
+    width: 4px;
+    height: 20px;
+    background: linear-gradient(to bottom, transparent, rgba(0,0,0,0.1), transparent);
+    border-radius: 2px;
+    transform: translateY(-50%);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    pointer-events: none;
+  }
+  
+  .drag-container:hover::after {
+    opacity: 1;
+  }
+  
+  /* Smooth scroll snap for better UX */
+  .drag-container {
+    scroll-snap-type: x proximity;
+    position: relative;
+  }
+  
+  .drag-container > * {
+    scroll-snap-align: start;
+  }
+  
+  /* Custom scrollbar for better visual feedback on desktop */
+  @media (pointer: fine) {
+    .drag-container::-webkit-scrollbar {
+      height: 2px;
+    }
+    
+    .drag-container::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    
+    .drag-container::-webkit-scrollbar-thumb {
+      background: rgba(0, 0, 0, 0.2);
+      border-radius: 1px;
+      transition: background 0.3s ease;
+    }
+    
+    .drag-container:hover::-webkit-scrollbar-thumb {
+      background: rgba(0, 0, 0, 0.4);
+    }
+    
+    .dark .drag-container::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.2);
+    }
+    
+    .dark .drag-container:hover::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.4);
+    }
+  }
+  
+  /* Navigation arrow styles - desktop only (mobile hidden via Tailwind) */
+  
+  .scroll-nav-arrow:hover {
+    transform: scale(1.1);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  }
+  
+  .scroll-nav-arrow:active {
+    transform: scale(0.95);
+  }
+  
+  /* Prevent arrows from interfering with drag */
+  .dragging .scroll-nav-arrow {
+    pointer-events: none;
+    opacity: 0.5;
+  }
+  
+  /* Arrow positioning improvements - arrows are now hidden on mobile via Tailwind classes */
+  @media (min-width: 768px) {
+    .scroll-nav-arrow {
+      opacity: 0;
+      transform: scale(0.9);
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      pointer-events: none;
+    }
+    
+    .scroll-section:hover .scroll-nav-arrow {
+      opacity: 1;
+      transform: scale(1);
+      pointer-events: auto;
+    }
+  }
+  
+  /* Smooth arrow interactions */
+  .scroll-nav-arrow:focus-visible {
+    outline: 2px solid #176DA6;
+    outline-offset: 2px;
+  }
+  
+  /* Better visibility on different backgrounds */
+  .scroll-nav-arrow {
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+  }
+  
+  /* Pulse effect for better discoverability */
+  @keyframes pulse-hint {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+  }
+  
+  .scroll-section:hover .scroll-nav-arrow:first-of-type {
+    animation: pulse-hint 2s ease-in-out infinite;
+    animation-delay: 3s;
+  }
 }

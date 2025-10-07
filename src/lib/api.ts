@@ -73,10 +73,20 @@ export const moviesAPI = {
     limit?: number;
     type?: string;
     search?: string;
+    genre?: string;
+    tag?: string;
     sortBy?: string;
     sortOrder?: string;
   }) => {
-    const response = await api.get('/movies', { params });
+    // Clean up params - remove undefined/empty values
+    const cleanParams = Object.fromEntries(
+      Object.entries(params || {}).filter(([, value]) => 
+        value !== undefined && value !== null && value !== ''
+      )
+    );
+    
+    console.log('API call to /movies with params:', cleanParams);
+    const response = await api.get('/movies', { params: cleanParams });
     return response.data;
   },
   
