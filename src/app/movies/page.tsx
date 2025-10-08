@@ -136,27 +136,55 @@ const MoviesPage = () => {
   }, [currentPage, searchQuery, activeTab, selectedGenre, selectedTag, sortBy, sortOrder, limit]);
 
 
-  // Sync selectedTag and searchQuery from URL params on mount and when URL changes
+  // Sync all filter parameters from URL on mount and when URL changes
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const params = new URLSearchParams(window.location.search);
-      const tagParam = params.get('tag');
+      
+      // Get all parameters from URL
+      const tagParam = params.get('tag') || 'all';
       const searchParam = params.get('search') || '';
-      // Only update if tagParam is a non-empty string and different from selectedTag
-      if (tagParam && tagParam !== selectedTag) {
+      const genreParam = params.get('genre') || 'all';
+      const typeParam = params.get('type') || 'all';
+      const sortByParam = params.get('sortBy') || 'createdAt';
+      const sortOrderParam = params.get('sortOrder') || 'desc';
+      const pageParam = parseInt(params.get('page') || '1');
+      
+      // Update state with URL parameters
+      let hasChanges = false;
+      
+      if (tagParam !== selectedTag) {
         setSelectedTag(tagParam);
-        setActiveTab('all');
-        setSearchQuery(searchParam);
-        setSelectedGenre('all');
-        setSortBy('createdAt');
-        setSortOrder('desc');
-        setCurrentPage(1);
-      } else if ((!tagParam || tagParam === 'all') && selectedTag !== 'all') {
-        setSelectedTag('all');
+        hasChanges = true;
       }
-      // Always update searchQuery if it differs
       if (searchParam !== searchQuery) {
         setSearchQuery(searchParam);
+        hasChanges = true;
+      }
+      if (genreParam !== selectedGenre) {
+        setSelectedGenre(genreParam);
+        hasChanges = true;
+      }
+      if (typeParam !== activeTab) {
+        setActiveTab(typeParam as 'all' | 'movie' | 'series');
+        hasChanges = true;
+      }
+      if (sortByParam !== sortBy) {
+        setSortBy(sortByParam);
+        hasChanges = true;
+      }
+      if (sortOrderParam !== sortOrder) {
+        setSortOrder(sortOrderParam);
+        hasChanges = true;
+      }
+      if (pageParam !== currentPage) {
+        setCurrentPage(pageParam);
+        hasChanges = true;
+      }
+      
+      // Only log if there were actual changes to avoid spam
+      if (hasChanges) {
+        console.log('URL params synced:', { tagParam, searchParam, genreParam, typeParam, sortByParam, sortOrderParam, pageParam });
       }
     }
     // eslint-disable-next-line
@@ -240,14 +268,48 @@ const MoviesPage = () => {
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     setCurrentPage(1);
-    // Remove tag param if searching
-    let url = '/movies';
-    const params = [];
-    if (searchQuery) params.push(`search=${encodeURIComponent(searchQuery)}`);
-    if (selectedTag !== 'all') params.push(`tag=${encodeURIComponent(selectedTag)}`);
-    if (params.length > 0) url += '?' + params.join('&');
-    router.replace(url);
-    // fetchMovies(); // No need, useEffect will trigger fetch
+    
+    // Update URL with current filter state, preserving all parameters
+    updateURLParams({
+      search: searchQuery,
+      tag: selectedTag,
+      genre: selectedGenre,
+      type: activeTab,
+      sortBy: sortBy,
+      sortOrder: sortOrder,
+      page: 1
+    });
+  };
+
+  // Unified URL parameter update function
+  const updateURLParams = (updates: {
+    search?: string;
+    tag?: string;
+    genre?: string;
+    type?: string;
+    sortBy?: string;
+    sortOrder?: string;
+    page?: number;
+  }) => {
+    const params = new URLSearchParams(window.location.search);
+    
+    // Update or remove parameters based on updates object
+    Object.entries(updates).forEach(([key, value]) => {
+      if (value && value !== 'all' && value !== '') {
+        params.set(key, String(value));
+      } else {
+        params.delete(key);
+      }
+    });
+    
+    // Always remove page if not explicitly set to preserve pagination
+    if (!updates.page) {
+      params.delete('page');
+    }
+    
+    // Build the new URL
+    const newURL = params.toString() ? `/movies?${params.toString()}` : '/movies';
+    router.replace(newURL);
   };
 
   const resetFilters = () => {
@@ -258,6 +320,9 @@ const MoviesPage = () => {
     setSortBy('createdAt');
     setSortOrder('desc');
     setCurrentPage(1);
+    
+    // Clear all URL parameters
+    router.replace('/movies');
   };
 
   const MovieCard: React.FC<{ movie: Movie }> = ({ movie }) => (
@@ -377,6 +442,17 @@ const MoviesPage = () => {
             onClick={() => {
               setActiveTab('all');
               setCurrentPage(1);
+              
+              // Update URL with all current filter parameters
+              updateURLParams({
+                search: searchQuery,
+                tag: selectedTag,
+                genre: selectedGenre,
+                type: 'all',
+                sortBy: sortBy,
+                sortOrder: sortOrder,
+                page: 1
+              });
             }}
             className={`px-6 py-3 rounded-md text-sm font-medium transition-all duration-200 flex items-center gap-2 ${
               activeTab === 'all'
@@ -391,6 +467,17 @@ const MoviesPage = () => {
             onClick={() => {
               setActiveTab('movie');
               setCurrentPage(1);
+              
+              // Update URL with all current filter parameters
+              updateURLParams({
+                search: searchQuery,
+                tag: selectedTag,
+                genre: selectedGenre,
+                type: 'movie',
+                sortBy: sortBy,
+                sortOrder: sortOrder,
+                page: 1
+              });
             }}
             className={`px-6 py-3 rounded-md text-sm font-medium transition-all duration-200 flex items-center gap-2 ${
               activeTab === 'movie'
@@ -405,6 +492,17 @@ const MoviesPage = () => {
             onClick={() => {
               setActiveTab('series');
               setCurrentPage(1);
+              
+              // Update URL with all current filter parameters
+              updateURLParams({
+                search: searchQuery,
+                tag: selectedTag,
+                genre: selectedGenre,
+                type: 'series',
+                sortBy: sortBy,
+                sortOrder: sortOrder,
+                page: 1
+              });
             }}
             className={`px-6 py-3 rounded-md text-sm font-medium transition-all duration-200 flex items-center gap-2 ${
               activeTab === 'series'
@@ -451,7 +549,21 @@ const MoviesPage = () => {
           </div>
 
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <Select value={selectedGenre} onValueChange={setSelectedGenre}>
+            <Select value={selectedGenre} onValueChange={(val) => {
+              setSelectedGenre(val);
+              setCurrentPage(1);
+              
+              // Update URL with all current filter parameters
+              updateURLParams({
+                search: searchQuery,
+                tag: selectedTag,
+                genre: val,
+                type: activeTab,
+                sortBy: sortBy,
+                sortOrder: sortOrder,
+                page: 1
+              });
+            }}>
               <SelectTrigger className="text-foreground">
                 <SelectValue placeholder="Genre" className="text-black placeholder:text-muted-foreground" />
               </SelectTrigger>
@@ -469,11 +581,17 @@ const MoviesPage = () => {
               if (!val || val === '') return; // Prevent setting empty tag
               setSelectedTag(val);
               setCurrentPage(1);
-              if (val !== 'all') {
-                router.replace(`/movies?tag=${encodeURIComponent(val)}`);
-              } else {
-                router.replace('/movies');
-              }
+              
+              // Update URL with all current filter parameters
+              updateURLParams({
+                search: searchQuery,
+                tag: val,
+                genre: selectedGenre,
+                type: activeTab,
+                sortBy: sortBy,
+                sortOrder: sortOrder,
+                page: 1
+              });
             }}>
               <SelectTrigger className="text-foreground">
                 <SelectValue placeholder="Tag" className="text-black placeholder:text-muted-foreground" />
@@ -488,7 +606,21 @@ const MoviesPage = () => {
               </SelectContent>
             </Select>
 
-            <Select value={sortBy} onValueChange={setSortBy}>
+            <Select value={sortBy} onValueChange={(val) => {
+              setSortBy(val);
+              setCurrentPage(1);
+              
+              // Update URL with all current filter parameters
+              updateURLParams({
+                search: searchQuery,
+                tag: selectedTag,
+                genre: selectedGenre,
+                type: activeTab,
+                sortBy: val,
+                sortOrder: sortOrder,
+                page: 1
+              });
+            }}>
               <SelectTrigger className="text-foreground">
                 <SelectValue placeholder="Sort by" className="text-black placeholder:text-muted-foreground" />
               </SelectTrigger>
@@ -501,7 +633,21 @@ const MoviesPage = () => {
               </SelectContent>
             </Select>
 
-            <Select value={sortOrder} onValueChange={setSortOrder}>
+            <Select value={sortOrder} onValueChange={(val) => {
+              setSortOrder(val);
+              setCurrentPage(1);
+              
+              // Update URL with all current filter parameters
+              updateURLParams({
+                search: searchQuery,
+                tag: selectedTag,
+                genre: selectedGenre,
+                type: activeTab,
+                sortBy: sortBy,
+                sortOrder: val,
+                page: 1
+              });
+            }}>
               <SelectTrigger className="text-foreground">
                 <SelectValue placeholder="Order" className="text-black placeholder:text-muted-foreground" />
               </SelectTrigger>
@@ -577,7 +723,19 @@ const MoviesPage = () => {
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                  onClick={() => {
+                    const newPage = Math.max(currentPage - 1, 1);
+                    setCurrentPage(newPage);
+                    updateURLParams({
+                      search: searchQuery,
+                      tag: selectedTag,
+                      genre: selectedGenre,
+                      type: activeTab,
+                      sortBy: sortBy,
+                      sortOrder: sortOrder,
+                      page: newPage
+                    });
+                  }}
                   disabled={currentPage === 1}
                   className="px-3"
                 >
@@ -607,7 +765,18 @@ const MoviesPage = () => {
                         key={page}
                         variant={currentPage === page ? "default" : "outline"}
                         size="sm"
-                        onClick={() => setCurrentPage(page)}
+                        onClick={() => {
+                          setCurrentPage(page);
+                          updateURLParams({
+                            search: searchQuery,
+                            tag: selectedTag,
+                            genre: selectedGenre,
+                            type: activeTab,
+                            sortBy: sortBy,
+                            sortOrder: sortOrder,
+                            page: page
+                          });
+                        }}
                         className="min-w-[40px]"
                       >
                         {page}
@@ -619,7 +788,19 @@ const MoviesPage = () => {
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                  onClick={() => {
+                    const newPage = Math.min(currentPage + 1, totalPages);
+                    setCurrentPage(newPage);
+                    updateURLParams({
+                      search: searchQuery,
+                      tag: selectedTag,
+                      genre: selectedGenre,
+                      type: activeTab,
+                      sortBy: sortBy,
+                      sortOrder: sortOrder,
+                      page: newPage
+                    });
+                  }}
                   disabled={currentPage === totalPages}
                   className="px-3"
                 >

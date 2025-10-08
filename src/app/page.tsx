@@ -554,14 +554,34 @@ export default function HomePage() {
               <section key={tag}>
                 <div className="flex items-center justify-between mb-6">
                   <div>
-                    <Link href={`/movies?tag=${encodeURIComponent(tag)}`} prefetch={false}>
+                    <Link href={(() => {
+                      const tagRoutes: Record<string, string> = {
+                        'movie': '/movies-category',
+                        'korea drama': '/korea-drama',
+                        'LGBT': '/lgbt',
+                        'thai series': '/thai-series',
+                        'western series': '/western-series',
+                        'variety show': '/variety-show'
+                      }
+                      return tagRoutes[tag] || `/movies?tag=${encodeURIComponent(tag)}`
+                    })()} prefetch={false}>
                       <h2 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white mb-2 hover:text-[#176DA6] cursor-pointer transition-colors">
                         {tag.charAt(0).toUpperCase() + tag.slice(1)}
                       </h2>
                     </Link>
                     <p className="text-gray-600 dark:text-gray-400">{`Latest ${tag} content`}</p>
                   </div>
-                  <Link href={`/movies?tag=${encodeURIComponent(tag)}`} prefetch={false}>
+                  <Link href={(() => {
+                    const tagRoutes: Record<string, string> = {
+                      'movie': '/movies-category',
+                      'korea drama': '/korea-drama',
+                      'LGBT': '/lgbt',
+                      'thai series': '/thai-series',
+                      'western series': '/western-series',
+                      'variety show': '/variety-show'
+                    }
+                    return tagRoutes[tag] || `/movies?tag=${encodeURIComponent(tag)}`
+                  })()} prefetch={false}>
                     <Button variant="outline" className="text-xs sm:text-sm px-2 py-1 sm:px-4 sm:py-2 h-8 sm:h-10">
                       <span className="hidden sm:inline">View All</span>
                       <span className="sm:hidden">All</span>
@@ -607,7 +627,17 @@ export default function HomePage() {
                 
                 {/* Mobile View All button */}
                 <div className="text-center mt-4 sm:hidden">
-                  <Link href={`/movies?tag=${encodeURIComponent(tag)}`} prefetch={false}>
+                  <Link href={(() => {
+                    const tagRoutes: Record<string, string> = {
+                      'movie': '/movies-category',
+                      'korea drama': '/korea-drama',
+                      'LGBT': '/lgbt',
+                      'thai series': '/thai-series',
+                      'western series': '/western-series',
+                      'variety show': '/variety-show'
+                    }
+                    return tagRoutes[tag] || `/movies?tag=${encodeURIComponent(tag)}`
+                  })()} prefetch={false}>
                     <Button variant="outline" size="sm" className="w-full max-w-xs mobile-view-all">
                       View All {tag.charAt(0).toUpperCase() + tag.slice(1)}
                       <ChevronRight className="w-4 h-4 ml-2" />
