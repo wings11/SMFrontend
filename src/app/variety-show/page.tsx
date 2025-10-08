@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, Suspense } from 'react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -135,7 +135,7 @@ const LoadingSkeleton = () => (
 
 const ITEMS_PER_PAGE = 24
 
-export default function VarietyShowPage() {
+function VarietyShowPageContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   
@@ -234,12 +234,6 @@ export default function VarietyShowPage() {
     setSelectedGenre(genre)
     setCurrentPage(1)
     updateURLParams({ genre, page: undefined })
-  }
-
-  const handleSortChange = (newSortBy: string) => {
-    setSortBy(newSortBy)
-    setCurrentPage(1)
-    updateURLParams({ sortBy: newSortBy, page: undefined })
   }
 
   const handleTypeChange = (type: string) => {
@@ -462,5 +456,13 @@ export default function VarietyShowPage() {
         )}
       </div>
     </div>
+  )
+}
+
+export default function VarietyShowPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-white dark:bg-black flex items-center justify-center"><div className="text-lg">Loading...</div></div>}>
+      <VarietyShowPageContent />
+    </Suspense>
   )
 }
